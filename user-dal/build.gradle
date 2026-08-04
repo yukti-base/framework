@@ -1,0 +1,15 @@
+apply from: "../dependencies.gradle"
+
+dependencies {
+
+    api "org.springframework.boot:spring-boot-starter-data-jpa:${rootProject.ext.springBootVersion}"
+
+    implementation "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
+
+}

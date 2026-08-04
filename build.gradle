@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'org.springframework.boot' version '4.1.0' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+}
+
+apply from: 'dependencies.gradle'
+
+allprojects {
+
+    group = "org.yuktisetu"
+
+    version = "1.0.0-SNAPSHOT"
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+}
+
+subprojects {
+
+    apply plugin: "java-library"
+
+    // BUG in your original file: 'maven-publish' was declared in the root
+    // plugins{} block above with no `apply false`. In a multi-project Gradle
+    // build, a plugin declared that way applies ONLY to the root project —
+    // which has no source and nothing to publish. user-dal never actually got
+    // the plugin, so `./gradlew :user-dal:publishToMavenLocal` would fail with
+    // "task not found." Applying it here, inside subprojects{}, is what
+    // actually gives every dal module (user-dal and whatever comes after it)
+    // the publishing tasks.
+    apply plugin: "maven-publish"
+
+    java {
+
+        sourceCompatibility = JavaVersion.VERSION_21
+
+        targetCompatibility = JavaVersion.VERSION_21
+
+        withSourcesJar()
+
+    }
+
+    // Defines WHAT gets published: the compiled jar + sources jar from the
+    // java-library plugin's output (components.java), under the
+    // group/version set in allprojects above (org.yuktisetu:user-dal:1.0.0-SNAPSHOT).
+    // No repositories{} block needed here for mavenLocal — publishToMavenLocal
+    // is a task the maven-publish plugin creates automatically per publication
+    // and always targets ~/.m2/repository regardless of this config. You'd only
+    // add a repositories{} block here later when you stand up Nexus and want
+    // `publish` (not `publishToMavenLocal`) to push there instead.
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+
+}

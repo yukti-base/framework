@@ -1,0 +1,13 @@
+ext {
+
+    springBootVersion = "4.1.0"
+
+    lombokVersion = "1.18.32"
+
+    postgresVersion = "42.7.7"
+
+    jacksonVersion = "2.19.2"
+
+    hibernateTypesVersion = "2.21.1"
+
+}
