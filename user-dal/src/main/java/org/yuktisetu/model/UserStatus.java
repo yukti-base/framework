@@ -6,5 +6,6 @@ public enum UserStatus {
     LOCKED,
     ALUMNI,
     IN_ELIGIBLE,
-    SUSPENDED
+    SUSPENDED,
+    PENDING_ACTIVATION
 }

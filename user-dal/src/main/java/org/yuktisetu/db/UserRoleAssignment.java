@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,11 @@ import org.yuktisetu.model.RoleType;
 import java.util.Date;
 
 @Entity
-@Table(name = "user_role_assignments")
+@Table(name = "user_role_assignments",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_user_role_college_dept",
+                columnNames = {"user_id", "role", "college_id", "dept_id"}
+        ))
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
