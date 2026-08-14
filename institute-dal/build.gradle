@@ -12,6 +12,4 @@ dependencies {
 
     implementation "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
 
-    api project(':institute-dal')
-
 }

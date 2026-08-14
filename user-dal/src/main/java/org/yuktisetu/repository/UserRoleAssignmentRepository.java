@@ -22,21 +22,25 @@ public interface UserRoleAssignmentRepository extends JpaRepository<UserRoleAssi
     long countByRoleAndCollegeIdAndIsActiveTrue(RoleType role, Long collegeId);
 
     // same, but for dept-scoped roles where dept also matters
-    long countByRoleAndCollegeIdAndDeptIdAndIsActiveTrue(RoleType role, Long collegeId, Long deptId);
+    long countByRoleAndCollegeIdAndDepartmentIdAndIsActiveTrue(RoleType role, Long collegeId, Long deptId);
 
     // trust-wide count (Super Admin / IT Admin)
     long countByRoleAndIsActiveTrue(RoleType role);
 
     // "does any active subordinate exist in this scope" — used by the last-holder guard
     boolean existsByRoleAndCollegeIdAndIsActiveTrue(RoleType role, Long collegeId);
-    boolean existsByRoleAndCollegeIdAndDeptIdAndIsActiveTrue(RoleType role, Long collegeId, Long deptId);
+    boolean existsByRoleAndCollegeIdAndDepartmentIdAndIsActiveTrue(RoleType role, Long collegeId, Long deptId);
 
     // duplicate-assignment prevention (add as a DB unique index too, see note below)
-    boolean existsByUserIdAndRoleAndCollegeIdAndDeptId(Long userId, RoleType role, Long collegeId, Long deptId);
+    boolean existsByUserIdAndRoleAndCollegeIdAndDepartmentId(Long userId, RoleType role, Long collegeId, Long deptId);
 
     List<UserRoleAssignment> findByRoleAndCollegeIdInAndIsActiveTrue(RoleType role, List<Long> collegeIds);
 
     Optional<UserRoleAssignment> findByIdAndIsActiveTrue(Long id);
 
-    UserRoleAssignment findByUserIdAndRoleAndCollegeIdAndDeptIdAndIsActiveTrue(Long userId, RoleType role, Long collegeId, Long deptId);
+    UserRoleAssignment findByUserIdAndRoleAndCollegeIdAndDepartmentIdAndIsActiveTrue(Long userId, RoleType role, Long collegeId, Long deptId);
+
+    List<UserRoleAssignment> findByCollege_IdAndIsActiveTrue(Long collegeId);
+    List<UserRoleAssignment> findByDepartment_IdAndIsActiveTrue(Long deptId);
+    List<UserRoleAssignment> findByCollege_IdAndRoleAndIsActiveTrue(Long collegeId, RoleType role);
 }

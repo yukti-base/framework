@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -48,11 +49,13 @@ public class UserRoleAssignment {
     // STUDENT / FACULTY_DEPT_COORDINATOR / HOD / GROUND_VOLUNTEER / TNP_COORDINATOR / TNP_COLLEGE_ADMIN -> collegeId required
     // FACULTY_DEPT_COORDINATOR / HOD -> deptId also required
     // TNP_SUPER_ADMIN / IT_ADMIN -> both null (trust-wide)
-    @Column(name = "college_id")
-    private Long collegeId;   // FK -> org-dal College.id, no hard FK across modules — validated at service layer
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "college_id", foreignKey = @ForeignKey(name = "fk_role_assignment_college"))
+    private College college;     // FK -> org-dal College.id, no hard FK across modules — validated at service layer
 
-    @Column(name = "dept_id")
-    private Long deptId;      // FK -> org-dal Department.id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dept_id", foreignKey = @ForeignKey(name = "fk_role_assignment_department"))
+    private Department department;      // FK -> org-dal Department.id
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
@@ -71,8 +74,6 @@ public class UserRoleAssignment {
     @ManyToOne(fetch = FetchType.LAZY)
     private User revokedBy;
 
-    // enforce "collegeId required unless role is trust-wide" and
-    // "deptId required only for dept-scoped roles" in a @PrePersist / service-layer validator,
-    // NOT as a DB CHECK constraint keyed to an enum — that becomes unmaintainable
-    // the moment role scoping rules change, and your own SSOT treats rule changes as config, not migrations.
+    public Long getCollegeId() { return college != null ? college.getId() : null; }
+    public Long getDeptId()    { return department != null ? department.getId() : null; }
 }

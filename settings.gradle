@@ -1,4 +1,5 @@
 rootProject.name = 'framework'
 include(
-        "user-dal"
+        "user-dal",
+        'institute-dal'
 )
