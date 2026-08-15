@@ -10,6 +10,4 @@ dependencies {
 
     implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
 
-    implementation "com.fasterxml.jackson.core:jackson-databind:${rootProject.ext.jacksonVersion}"
-
 }

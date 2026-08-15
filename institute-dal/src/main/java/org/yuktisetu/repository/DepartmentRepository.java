@@ -17,6 +17,8 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     long countByCollegeIdAndIsDeletedFalse(Long collegeId);
 
+
+    boolean existsByCollegeId(Long collegeId);
     // Bulk fetch for a trust-wide department listing across many colleges
     // in one query — avoids looping per-college in the service layer.
     List<Department> findByCollegeIdInAndIsDeletedFalse(List<Long> collegeIds);

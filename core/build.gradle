@@ -1,0 +1,30 @@
+apply from: "../dependencies.gradle"
+
+dependencies {
+
+    api "org.springframework.boot:spring-boot-starter-webmvc:${rootProject.ext.springBootVersion}"
+
+    api "org.springframework.boot:spring-boot-starter-security:${rootProject.ext.springBootVersion}"
+
+    api "io.jsonwebtoken:jjwt-api:${rootProject.ext.jjwtVersion}"
+
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${rootProject.ext.jjwtVersion}"
+
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${rootProject.ext.jjwtVersion}"
+
+    implementation "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    // DELIBERATELY ABSENT, PERMANENTLY: no `api project(':institute-dal')`
+    // and no `api project(':user-dal')` here. core is a dependency of every
+    // service in the fleet -- the moment it depends on a DAL module, every
+    // service gets that DAL's entities on its classpath whether it touches
+    // them or not, forever. This is the exact wrong-direction coupling
+    // already flagged in user-dal's own build.gradle (which now depends on
+    // institute-dal), except baked into something nothing can opt out of.
+    // If a future change to core seems to need a DAL type, that's a sign
+    // the thing you're adding doesn't belong in core -- it belongs in the
+    // one service that needs it.
+
+}
