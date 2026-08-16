@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface StudentProfileRepository extends JpaRepository<StudentProfile, Long> {
 
     // Primary lookup — every profile operation starts from the logged-in user's ID (from JWT).
-    Optional<StudentProfile> findByUserId(Long userId);
+    Optional<StudentProfile> findByUserIdAndUser_IsDeletedFalse(Long userId);
 
-    boolean existsByUserId(Long userId);
+    boolean existsByUserIdAndUser_IsDeletedFalse(Long userId);
 }
