@@ -8,6 +8,10 @@ dependencies {
 
     api "io.jsonwebtoken:jjwt-api:${rootProject.ext.jjwtVersion}"
 
+    api "org.springframework.boot:spring-boot-starter-mail:${rootProject.ext.springBootVersion}"
+
+    api "org.springframework.boot:spring-boot-starter-thymeleaf:${rootProject.ext.springBootVersion}"
+
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${rootProject.ext.jjwtVersion}"
 
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${rootProject.ext.jjwtVersion}"
