@@ -25,13 +25,13 @@ public class EmailAutoConfiguration {
     public JavaMailSender javaMailSender(MailProperties mailProperties) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
         sender.setHost(mailProperties.getHost());
-        sender.setPort(mailProperties.getPort());
+        sender.setPort(mailProperties.getPort() != null ? mailProperties.getPort() : 587);
         sender.setUsername(mailProperties.getUsername());
         sender.setPassword(mailProperties.getPassword());
         sender.setDefaultEncoding("UTF-8");
 
         Properties props = sender.getJavaMailProperties();
-        mailProperties.getProperties().forEach(props::put);
+        props.putAll(mailProperties.getProperties());
 
         return sender;
     }
