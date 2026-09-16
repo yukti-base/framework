@@ -28,5 +28,7 @@ public interface CollegeRepository extends JpaRepository<College, Long> {
     long countByTrustIdAndIsDeletedFalse(Long trustId); // trust-wide dashboard tile
 
     boolean existsByTrustId(Long trustId);
+
+    College findByCodeAndIsDeletedFalse(String code);
 }
 

@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.yuktisetu.core.exception.ErrorResponse;
+import org.yuktisetu.core.response.YuktiSetuResponse;
 
 import java.io.IOException;
 
@@ -32,7 +32,8 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(objectMapper.writeValueAsString(
-                ErrorResponse.of("UNAUTHENTICATED", "Authentication is required and has failed or has not been provided.")
+                YuktiSetuResponse.error(HttpServletResponse.SC_UNAUTHORIZED, "UNAUTHENTICATED",
+                        "Authentication is required and has failed or has not been provided.")
         ));
     }
 }

@@ -1,0 +1,31 @@
+apply from: "../dependencies.gradle"
+
+dependencies {
+
+    api "org.springframework.boot:spring-boot-starter-data-jpa:${rootProject.ext.springBootVersion}"
+
+    implementation "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
+
+    // College / Department for posting targets, and BaseAuditableEntity.
+    api project(':institute-dal')
+
+    // User, so that student references are real foreign keys rather than loose
+    // ids. An application or an offer pointing at a user that does not exist is
+    // the one kind of orphan this system cannot tolerate -- it is a placement
+    // record with no student attached.
+    //
+    // No cycle: user-dal -> institute-dal, drive-dal -> user-dal. The cost is
+    // that User's lazy association graph joins the metamodel, which is a
+    // tidiness concern, not a correctness or performance one.
+    //
+    // ACTOR references (created_by, published_by, decided_by, disqualified_by,
+    // uploaded_by, changed_by) stay bare Longs on purpose, matching the
+    // BaseAuditableEntity.createdBy precedent -- who did something is audit
+    // metadata, not a structural relationship.
+    api project(':user-dal')
+
+}

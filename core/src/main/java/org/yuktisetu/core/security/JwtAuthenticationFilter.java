@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,6 +24,7 @@ import java.util.Map;
  *   http.addFilterBefore(new JwtAuthenticationFilter(tokenVerifier),
  *                         UsernamePasswordAuthenticationFilter.class);
  */
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenVerifier tokenVerifier;
@@ -76,12 +78,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 var authToken = new UsernamePasswordAuthenticationToken(principal, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("Authenticated request userId={} path={}", principal.userId(), request.getRequestURI());
             } catch (Exception e) {
                 // Invalid/expired token, or malformed claims: leave the
                 // SecurityContext empty. RestAuthenticationEntryPoint then
                 // produces a consistent 401 JSON body for any endpoint that
                 // actually requires authentication -- this filter itself
                 // never writes a response.
+                log.warn("JWT authentication failed path={} reason={}: {}",
+                        request.getRequestURI(), e.getClass().getSimpleName(), e.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }

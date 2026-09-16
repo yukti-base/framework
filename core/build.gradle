@@ -12,6 +12,17 @@ dependencies {
 
     api "org.springframework.boot:spring-boot-starter-thymeleaf:${rootProject.ext.springBootVersion}"
 
+    // Caching and the shared async executor are configured here rather than per
+    // service, so every service in the fleet gets the same thread-pool sizing and
+    // the same cache TTLs instead of four divergent copies.
+    api "org.springframework.boot:spring-boot-starter-cache:${rootProject.ext.springBootVersion}"
+
+    // Caffeine over the default ConcurrentMapCacheManager because those caches are
+    // unbounded and never expire -- which on a long-running service is a slow leak
+    // and a source of stale eligibility data. Caffeine gives per-cache size caps
+    // and TTLs.
+    api "com.github.ben-manes.caffeine:caffeine:${rootProject.ext.caffeineVersion}"
+
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${rootProject.ext.jjwtVersion}"
 
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${rootProject.ext.jjwtVersion}"

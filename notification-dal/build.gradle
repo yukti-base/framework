@@ -1,0 +1,18 @@
+apply from: "../dependencies.gradle"
+
+dependencies {
+
+    api "org.springframework.boot:spring-boot-starter-data-jpa:${rootProject.ext.springBootVersion}"
+
+    implementation "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
+
+    // No institute-dal, no user-dal on purpose: notification-service must keep
+    // working when the academic model changes, and it never joins to a student
+    // row -- recipient identity (email, display name) arrives denormalised on
+    // the dispatch event.
+
+}

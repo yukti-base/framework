@@ -14,4 +14,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmailIgnoreCaseAndIsDeletedFalse(String email);
 
     boolean existsByEmailIgnoreCaseAndIsDeletedFalse(String email);
+
+    // The "separate explicit query" the note above refers to: admin restore and
+    // audit screens legitimately need the rows the default lookups hide.
+    Optional<User> findByIdAndIsDeletedTrue(Long id);
+
+    // Cascade guard for hard delete — users.deleted_by points at another user,
+    // so whoever soft-deleted someone cannot themselves be removed while that
+    // reference still stands.
+    long countByDeletedBy(Long actorUserId);
 }

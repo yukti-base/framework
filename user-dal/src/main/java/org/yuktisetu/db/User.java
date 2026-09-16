@@ -48,6 +48,12 @@ public class User {
     @Column(name = "last_name")
     private String lastName;
 
+    @Column(name = "date_of_birth")
+    private Date dateOfBirth;
+
+    @Column(name = "address", length = 500)
+    private String address;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private UserStatus status; // ACTIVE, INACTIVE, LOCKED

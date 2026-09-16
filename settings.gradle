@@ -2,5 +2,8 @@ rootProject.name = 'framework'
 include(
         "user-dal",
         "institute-dal",
-        "core"
+        "core",
+        "messaging-dal",
+        "drive-dal",
+        "notification-dal"
 )

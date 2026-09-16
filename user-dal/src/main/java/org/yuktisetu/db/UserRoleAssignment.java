@@ -9,6 +9,7 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -26,7 +27,27 @@ import java.util.Date;
         uniqueConstraints = @UniqueConstraint(
                 name = "uq_user_role_college_dept",
                 columnNames = {"user_id", "role", "college_id", "dept_id"}
-        ))
+        ),
+        indexes = {
+                // The cohort lookup: "every active student in this college and
+                // department". Load-bearing, not decorative -- the drive targeting
+                // join runs exactly this predicate, and the unique constraint above
+                // cannot serve it because that index is led by user_id, so Postgres
+                // would sequentially scan the whole assignment table once per
+                // posting target. At 100k+ assignments that is the difference
+                // between a few milliseconds and several seconds per drive.
+                //
+                // Column order follows selectivity: role and is_active narrow
+                // hardest and are always equality predicates, then college, then
+                // department (which the query sometimes leaves unconstrained to
+                // mean "all departments").
+                @Index(name = "idx_role_assignment_cohort",
+                        columnList = "role, is_active, college_id, dept_id"),
+                // Reverse direction: "who holds a role in this college", used by
+                // the coordinator and HoD listing screens.
+                @Index(name = "idx_role_assignment_college_role",
+                        columnList = "college_id, role, is_active")
+        })
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -56,6 +77,13 @@ public class UserRoleAssignment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dept_id", foreignKey = @ForeignKey(name = "fk_role_assignment_department"))
     private Department department;      // FK -> org-dal Department.id
+
+    // Only meaningful for roles that represent an academic program (STUDENT
+    // today) -- e.g. "B.Tech", "M.Tech". Admin-set at role-assignment time
+    // (bulk-student-import), never student-editable. Nullable since it does
+    // not apply to non-academic roles.
+    @Column(name = "degree")
+    private String degree;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

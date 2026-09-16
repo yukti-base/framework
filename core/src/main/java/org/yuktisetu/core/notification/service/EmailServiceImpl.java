@@ -1,6 +1,7 @@
 package org.yuktisetu.core.notification.service;
 
 import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.thymeleaf.context.Context;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
@@ -31,7 +33,14 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendEmail(EmailRequest request) {
         MimeMessage mimeMessage = buildMimeMessage(request);
-        mailSender.send(mimeMessage);
+        try {
+            mailSender.send(mimeMessage);
+            log.info("Sent email subject='{}' recipientCount={}", request.getSubject(), request.getTo().size());
+        } catch (Exception e) {
+            log.error("Failed to send email subject='{}' recipientCount={}: {}",
+                    request.getSubject(), request.getTo().size(), e.getMessage());
+            throw e;
+        }
     }
 
     @Override
@@ -42,6 +51,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendBulkInviteEmails(List<InviteRecipient> recipients) {
         if (recipients == null || recipients.isEmpty()) {
+            log.warn("sendBulkInviteEmails called with no recipients, skipping");
             return;
         }
 
@@ -56,7 +66,13 @@ public class EmailServiceImpl implements EmailService {
             messages.add(buildMimeMessage(request));
         }
 
-        mailSender.send(messages.toArray(new MimeMessage[0]));
+        try {
+            mailSender.send(messages.toArray(new MimeMessage[0]));
+            log.info("Sent bulk invite emails count={}", messages.size());
+        } catch (Exception e) {
+            log.error("Failed to send bulk invite emails count={}: {}", messages.size(), e.getMessage());
+            throw e;
+        }
     }
 
     private EmailRequest buildInviteRequest(List<String> recipients, String inviteeName, String inviteToken) {
@@ -108,6 +124,7 @@ public class EmailServiceImpl implements EmailService {
 
             return mimeMessage;
         } catch (Exception e) {
+            log.error("Failed to build email recipientCount={}: {}", request.getTo().size(), e.getMessage());
             throw new EmailDeliveryException("Failed to build email for " + request.getTo(), e);
         }
     }

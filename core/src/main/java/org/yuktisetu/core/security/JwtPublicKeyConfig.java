@@ -1,5 +1,6 @@
 package org.yuktisetu.core.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,7 @@ import java.util.Base64;
  * loading logic there (rename that bean, e.g. `jwtPrivateKey`, so it's
  * unambiguous which one is which once both exist side by side).
  */
+@Slf4j
 @Configuration
 @EnableConfigurationProperties(JwtVerificationProperties.class)
 public class JwtPublicKeyConfig {
@@ -49,11 +51,14 @@ public class JwtPublicKeyConfig {
 
         X509EncodedKeySpec spec = new X509EncodedKeySpec(decoded);
 
-        return KeyFactory.getInstance("RSA").generatePublic(spec);
+        PublicKey key = KeyFactory.getInstance("RSA").generatePublic(spec);
+        log.info("Loaded JWT public key from path={}", props.getPublicKeyPath());
+        return key;
     }
 
     @Bean
     public JwtTokenVerifier jwtTokenVerifier(PublicKey publicKey, JwtVerificationProperties props) {
+        log.info("JWT verifier configured for expected issuer={}", props.getIssuer());
         return new JwtTokenVerifier(publicKey, props.getIssuer());
     }
 

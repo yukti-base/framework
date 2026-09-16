@@ -1,5 +1,6 @@
 package org.yuktisetu.core.notification.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -18,14 +19,16 @@ import java.util.Properties;
 
 @Configuration
 @EnableConfigurationProperties({EmailProperties.class, MailProperties.class})
+@Slf4j
 @ConditionalOnProperty(prefix = "app.email", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class EmailAutoConfiguration {
 
     @Bean
     public JavaMailSender javaMailSender(MailProperties mailProperties) {
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
+        int port = mailProperties.getPort() != null ? mailProperties.getPort() : 587;
         sender.setHost(mailProperties.getHost());
-        sender.setPort(mailProperties.getPort() != null ? mailProperties.getPort() : 587);
+        sender.setPort(port);
         sender.setUsername(mailProperties.getUsername());
         sender.setPassword(mailProperties.getPassword());
         sender.setDefaultEncoding("UTF-8");
@@ -33,6 +36,7 @@ public class EmailAutoConfiguration {
         Properties props = sender.getJavaMailProperties();
         props.putAll(mailProperties.getProperties());
 
+        log.info("Configured JavaMailSender host={} port={}", mailProperties.getHost(), port);
         return sender;
     }
 

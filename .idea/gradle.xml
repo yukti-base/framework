@@ -10,7 +10,10 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/core" />
+            <option value="$PROJECT_DIR$/drive-dal" />
             <option value="$PROJECT_DIR$/institute-dal" />
+            <option value="$PROJECT_DIR$/messaging-dal" />
+            <option value="$PROJECT_DIR$/notification-dal" />
             <option value="$PROJECT_DIR$/user-dal" />
           </set>
         </option>

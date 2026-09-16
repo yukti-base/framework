@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.yuktisetu.core.exception.ErrorResponse;
+import org.yuktisetu.core.response.YuktiSetuResponse;
 
 import java.io.IOException;
 
@@ -34,7 +34,8 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(objectMapper.writeValueAsString(
-                ErrorResponse.of("FORBIDDEN", "You do not have permission to perform this action.")
+                YuktiSetuResponse.error(HttpServletResponse.SC_FORBIDDEN, "FORBIDDEN",
+                        "You do not have permission to perform this action.")
         ));
     }
 }
