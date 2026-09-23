@@ -1,0 +1,22 @@
+apply from: "../dependencies.gradle"
+
+dependencies {
+
+    api "org.springframework.boot:spring-boot-starter-data-jpa:${rootProject.ext.springBootVersion}"
+
+    implementation "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
+
+    // StudentProfile -> User and DynamicFieldDefinition -> User are real FKs.
+    api project(':identity-dal')
+
+    // Declared explicitly, NOT inherited. BaseAuditableEntity lives in
+    // persistence-common, and this module currently reaches it only transitively
+    // through institute-dal's `api` edge. The moment that edge is cut -- which is
+    // the next step of the migration -- this module would stop compiling with a
+    // "cannot find symbol: BaseAuditableEntity" that points at the wrong cause.
+    api project(':persistence-common')
+}

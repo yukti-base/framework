@@ -30,7 +30,6 @@ public final class YuktiSetuCorsSource {
     /** Local dev front-ends plus the API console the team actually uses. */
     public static final List<String> DEFAULT_ALLOWED_ORIGINS = List.of(
             "https://hoppscotch.io",
-            "http://localhost:5173",
             "http://localhost:3001",
             "http://localhost:3000"
     );

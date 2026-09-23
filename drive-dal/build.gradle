@@ -10,22 +10,23 @@ dependencies {
 
     implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
 
-    // College / Department for posting targets, and BaseAuditableEntity.
+    // drive entities carry real FKs into all three: College/Department for
+    // posting targets and offers, User for applications and offers, and
+    // StudentProfile for the eligibility fact assembly.
+    api project(':persistence-common')
     api project(':institute-dal')
+    api project(':identity-dal')
+    api project(':profile-dal')
 
-    // User, so that student references are real foreign keys rather than loose
-    // ids. An application or an offer pointing at a user that does not exist is
-    // the one kind of orphan this system cannot tolerate -- it is a placement
-    // record with no student attached.
-    //
-    // No cycle: user-dal -> institute-dal, drive-dal -> user-dal. The cost is
-    // that User's lazy association graph joins the metamodel, which is a
-    // tidiness concern, not a correctness or performance one.
-    //
-    // ACTOR references (created_by, published_by, decided_by, disqualified_by,
-    // uploaded_by, changed_by) stay bare Longs on purpose, matching the
-    // BaseAuditableEntity.createdBy precedent -- who did something is audit
-    // metadata, not a structural relationship.
-    api project(':user-dal')
+    // Test-only. The pure rule classes in org.yuktisetu.drive.model are the
+    // "business rules frozen" contract of the migration -- they are the one
+    // thing that must behave identically before and after every refactor, so
+    // they are the first thing to get a regression net.
+    testImplementation platform("org.junit:junit-bom:5.11.3")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
 
+tasks.named('test') {
+    useJUnitPlatform()
 }

@@ -10,4 +10,5 @@ dependencies {
 
     implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
 
+    api project(':persistence-common')
 }

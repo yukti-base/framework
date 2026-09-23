@@ -1,9 +1,15 @@
 rootProject.name = 'framework'
 include(
-        "user-dal",
-        "institute-dal",
+        // Shared @MappedSuperclass only -- no domain, no other DAL.
+        "persistence-common",
         "core",
-        "messaging-dal",
+        // One module per bounded context. Each publishes into its own package
+        // (org.yuktisetu.<context>.*) so a service scans only what it owns.
+        "institute-dal",
+        "identity-dal",
+        "profile-dal",
         "drive-dal",
-        "notification-dal"
+        "notification-dal",
+        // Transactional outbox + event contracts, shared by producers.
+        "messaging-dal"
 )

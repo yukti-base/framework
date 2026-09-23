@@ -11,10 +11,12 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/drive-dal" />
+            <option value="$PROJECT_DIR$/identity-dal" />
             <option value="$PROJECT_DIR$/institute-dal" />
             <option value="$PROJECT_DIR$/messaging-dal" />
             <option value="$PROJECT_DIR$/notification-dal" />
-            <option value="$PROJECT_DIR$/user-dal" />
+            <option value="$PROJECT_DIR$/persistence-common" />
+            <option value="$PROJECT_DIR$/profile-dal" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -1,0 +1,13 @@
+package org.yuktisetu.drive.model;
+
+public enum JobType {
+    PPO,
+    FULL_TIME,
+    INTERNSHIP,
+    INTERNSHIP_WITH_PPO,
+    APPRENTICESHIP,
+    COMPETITION,
+    COMPETITION_WITH_PPO,
+    COMPETITION_WITH_INTERNSHIP,
+    OTHER
+}

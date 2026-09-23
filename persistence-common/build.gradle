@@ -1,0 +1,17 @@
+apply from: "../dependencies.gradle"
+
+dependencies {
+
+    api "org.springframework.boot:spring-boot-starter-data-jpa:${rootProject.ext.springBootVersion}"
+
+    implementation "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+
+    implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
+
+    // Deliberately no DAL dependencies. This module exists so that inheriting a
+    // primary key and audit columns does not drag a whole bounded context onto
+    // the classpath -- drive-dal used to depend on institute-dal for nothing but
+    // BaseAuditableEntity.
+}

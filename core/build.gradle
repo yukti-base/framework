@@ -27,19 +27,37 @@ dependencies {
 
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${rootProject.ext.jjwtVersion}"
 
+    // Object storage. Generic infrastructure with no domain knowledge -- it moves
+    // bytes and returns a key, exactly like the mail sender above. Lives in core
+    // because student documents (user-service) and job-description files
+    // (admin-service) both need it.
+    api "com.cloudinary:cloudinary-http44:${rootProject.ext.cloudinaryVersion}"
+
     implementation "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
 
     annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
 
+    // Test-only. FileStorageService.downloadUrl encodes a Cloudinary quirk that
+    // is impossible to guess and silently degrades when broken -- a wrong name
+    // still returns 200, just unnamed -- so it gets a pure regression net here
+    // rather than relying on the network-backed probe in user-service.
+    testImplementation platform("org.junit:junit-bom:5.11.3")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
     // DELIBERATELY ABSENT, PERMANENTLY: no `api project(':institute-dal')`
-    // and no `api project(':user-dal')` here. core is a dependency of every
+    // and no `api project(':identity-dal')` here. core is a dependency of every
     // service in the fleet -- the moment it depends on a DAL module, every
     // service gets that DAL's entities on its classpath whether it touches
     // them or not, forever. This is the exact wrong-direction coupling
-    // already flagged in user-dal's own build.gradle (which now depends on
+    // already flagged in identity-dal's own build.gradle (which now depends on
     // institute-dal), except baked into something nothing can opt out of.
     // If a future change to core seems to need a DAL type, that's a sign
     // the thing you're adding doesn't belong in core -- it belongs in the
     // one service that needs it.
 
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
