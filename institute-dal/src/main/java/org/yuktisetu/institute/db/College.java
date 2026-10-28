@@ -8,6 +8,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -15,6 +17,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.yuktisetu.institute.model.TenantStatus;
 import org.yuktisetu.persistence.BaseAuditableEntity;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -61,4 +66,18 @@ public class College extends BaseAuditableEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 16)
     private TenantStatus status = TenantStatus.ACTIVE;
+
+    /**
+     * The degrees this college offers. A department of this college may only
+     * belong to one of these, and a drive may only target a degree the college
+     * actually offers -- both enforced in the services, since a join table cannot
+     * express "department.degree must be among its college's degrees".
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "college_degrees",
+            joinColumns = @JoinColumn(name = "college_id", foreignKey = @ForeignKey(name = "fk_college_degree_college")),
+            inverseJoinColumns = @JoinColumn(name = "degree_id", foreignKey = @ForeignKey(name = "fk_college_degree_degree")),
+            uniqueConstraints = @UniqueConstraint(name = "uk_college_degree", columnNames = {"college_id", "degree_id"}))
+    private Set<Degree> degrees = new LinkedHashSet<>();
 }

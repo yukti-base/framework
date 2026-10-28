@@ -27,7 +27,9 @@ public final class PostingStatusTransitions {
         ALLOWED.put(DRAFT, EnumSet.of(PENDING_APPROVAL, PUBLISHED, CANCELLED));
         ALLOWED.put(PENDING_APPROVAL, EnumSet.of(DRAFT, PUBLISHED, CANCELLED));
         ALLOWED.put(PUBLISHED, EnumSet.of(APPLICATIONS_CLOSED, CANCELLED));
-        ALLOWED.put(APPLICATIONS_CLOSED, EnumSet.of(IN_PROGRESS, CANCELLED));
+        // -> PUBLISHED is the TnP extending the deadline of a sealed drive
+        // (2026-10-27): applications reopen and the pool is sealed again later.
+        ALLOWED.put(APPLICATIONS_CLOSED, EnumSet.of(PUBLISHED, IN_PROGRESS, CANCELLED));
         ALLOWED.put(IN_PROGRESS, EnumSet.of(COMPLETED, CANCELLED));
         ALLOWED.put(COMPLETED, EnumSet.noneOf(PostingStatus.class));
         ALLOWED.put(CANCELLED, EnumSet.noneOf(PostingStatus.class));

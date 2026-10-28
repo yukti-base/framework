@@ -9,9 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.yuktisetu.drive.db.JobPosting;
+import org.yuktisetu.drive.model.PostingNotice;
 import org.yuktisetu.drive.model.PostingStatus;
+import org.yuktisetu.drive.model.ShortlistingMode;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,6 +92,24 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
     Optional<JobPosting> findForSealing(@Param("id") Long id);
 
     /**
+     * This posting's shortlisting mode, read WITHOUT a lock, before the apply path
+     * decides which lock to take.
+     *
+     * That ordering is deliberate. FCFS needs an exclusive lock so the seat cap
+     * cannot be overshot; every other mode wants the shared lock so applies run in
+     * parallel. Taking the shared lock first and upgrading it would DEADLOCK two
+     * concurrent applies, because each would hold a share lock the other needs
+     * released. So the lock mode has to be chosen before the first locking read,
+     * which costs one unlocked primary-key lookup.
+     *
+     * Safe to read unlocked because shortlisting_mode is only editable while the
+     * posting is DRAFT or PENDING_APPROVAL -- it cannot change while applications
+     * are open.
+     */
+    @Query("select p.shortlistingMode from JobPosting p where p.id = :id and p.isDeleted = false")
+    Optional<ShortlistingMode> findShortlistingMode(@Param("id") Long id);
+
+    /**
      * The deadline sweep's query, served entirely by idx_posting_status_deadline.
      * Ids only -- each posting is then sealed in its own transaction, so one
      * failure cannot roll back the rest.
@@ -102,4 +123,24 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
             """)
     List<Long> findIdsDueForSealing(@Param("status") PostingStatus status,
                                     @Param("now") Instant now);
+
+    /**
+     * A drive's notification facts as plain values -- see PostingNotice. Call this
+     * instead of reading the company off a JobPosting entity.
+     */
+    @Query("""
+            select new org.yuktisetu.drive.model.PostingNotice(
+                       p.id, p.title, c.name, p.applicationDeadline, p.publishedBy, p.notifyOnPublish)
+              from JobPosting p join p.company c
+             where p.id = :id
+            """)
+    Optional<PostingNotice> findNoticeById(@Param("id") Long id);
+
+    @Query("""
+            select new org.yuktisetu.drive.model.PostingNotice(
+                       p.id, p.title, c.name, p.applicationDeadline, p.publishedBy, p.notifyOnPublish)
+              from JobPosting p join p.company c
+             where p.id in :ids
+            """)
+    List<PostingNotice> findNoticesByIds(@Param("ids") Collection<Long> ids);
 }

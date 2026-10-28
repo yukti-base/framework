@@ -117,6 +117,10 @@ public class StudentProfile {
     @Builder.Default
     private List<Achievement> achievements = new ArrayList<>();
 
+    @OneToMany(mappedBy = "studentProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Certification> certifications = new ArrayList<>();
+
     private Date createdAt;
     private Date updatedAt;
 }

@@ -169,12 +169,54 @@ public class JobPosting extends BaseAuditableEntity {
     @Column(name = "marks_student_placed", nullable = false)
     private boolean marksStudentPlaced = true;
 
-    /** Optional hard cap on total applications. Null = uncapped. */
+    /**
+     * The seat count. What it MEANS depends on shortlistingMode.
+     *
+     * Under FCFS this is a hard admission cap, enforced when the student applies,
+     * under an exclusive lock on this posting. Under every other mode it is a
+     * shortlist target consumed after the pool is sealed, and it is NOT checked at
+     * apply time -- capping applications then would make the drive
+     * first-come-first-served, so a stronger profile that applied an hour later
+     * would lose to a weaker one that refreshed faster, which is exactly the
+     * arbitrary filtering this portal exists to remove.
+     *
+     * Null = uncapped and no target. Required under FCFS.
+     */
     @Column(name = "max_applications")
     private Integer maxApplications;
 
     @Column(name = "notify_on_publish", nullable = false)
     private boolean notifyOnPublish = true;
+
+    /**
+     * When the TnP published this drive's shortlist. Set once. A student's
+     * composite score is never shown before this, so nobody sees a number the
+     * TnP may still be adjusting around.
+     */
+    @Column(name = "shortlist_published_at")
+    private Instant shortlistPublishedAt;
+
+    @Column(name = "shortlist_published_by")
+    private Long shortlistPublishedBy;
+
+    /**
+     * The last time the TnP extended the deadline of a sealed drive, reopening
+     * applications (2026-10-27). Each reopen discards the drive's ranking and
+     * shortlist -- superseding the score run rather than deleting it -- and the
+     * pool is sealed and ranked again at the new deadline. Students shortlisted
+     * before a reopen are shown as "under re-review", derived from their status
+     * history after this instant rather than stored as a status.
+     */
+    @Column(name = "reopened_at")
+    private Instant reopenedAt;
+
+    @Column(name = "reopened_by")
+    private Long reopenedBy;
+
+    // A database default too, so rows written by plain SQL (tests, imports) are valid.
+    @org.hibernate.annotations.ColumnDefault("0")
+    @Column(name = "reopen_count", nullable = false)
+    private int reopenCount = 0;
 
     /**
      * Two writers touch this row: admin-service authors it, and drive-service's

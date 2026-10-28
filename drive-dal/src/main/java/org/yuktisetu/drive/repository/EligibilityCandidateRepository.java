@@ -46,7 +46,7 @@ public interface EligibilityCandidateRepository extends JpaRepository<PostingTar
             JOIN user_role_assignments ura
                  ON ura.college_id = t.college_id
                 AND (t.department_id IS NULL OR ura.dept_id = t.department_id)
-                AND (t.degree IS NULL OR ura.degree = t.degree)
+                AND (t.degree_id IS NULL OR ura.degree_id = t.degree_id)
             JOIN users u ON u.id = ura.user_id
             JOIN student_profiles sp ON sp.user_id = u.id
             WHERE t.posting_id = :postingId

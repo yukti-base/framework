@@ -22,6 +22,7 @@ import org.yuktisetu.identity.model.RoleType;
 import java.util.Date;
 import jakarta.persistence.ForeignKey;
 import org.yuktisetu.institute.db.College;
+import org.yuktisetu.institute.db.Degree;
 import org.yuktisetu.institute.db.Department;
 
 @Entity
@@ -84,8 +85,9 @@ public class UserRoleAssignment {
     // today) -- e.g. "B.Tech", "M.Tech". Admin-set at role-assignment time
     // (bulk-student-import), never student-editable. Nullable since it does
     // not apply to non-academic roles.
-    @Column(name = "degree")
-    private String degree;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "degree_id", foreignKey = @ForeignKey(name = "fk_role_assignment_degree"))
+    private Degree degree;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;

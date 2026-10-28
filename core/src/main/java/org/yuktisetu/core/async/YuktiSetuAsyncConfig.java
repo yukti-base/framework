@@ -115,22 +115,39 @@ public class YuktiSetuAsyncConfig implements AsyncConfigurer {
     }
 
     /**
-     * Carries the caller's SecurityContext onto the worker thread.
+     * Carries the caller's identity onto the worker thread.
      *
-     * Without it, any @Async method that reads the authenticated principal -- or
-     * calls a @PreAuthorize-protected bean -- finds an empty context and fails in
-     * a way that looks nothing like a permissions bug. Cleared afterwards so a
-     * pooled thread never leaks one user's identity into the next task.
+     * Three properties, each fixing a way this used to go wrong:
+     *
+     *  1. A COPY, taken at submit time. The old version handed the worker the very
+     *     SecurityContext object the request thread owns, so the worker and the
+     *     request shared mutable state, and anything the request did to it after
+     *     submitting (including clearing it) was visible to a task that had not
+     *     started yet. The copy is a fresh context holding the same Authentication,
+     *     which is immutable for our purposes (a JWT principal).
+     *  2. The worker's previous context is RESTORED, not wiped. A rejected task
+     *     under CallerRunsPolicy runs on the SUBMITTING thread; the old finally
+     *     block cleared the context there, logging the request's own user out
+     *     halfway through the request that was in progress.
+     *  3. Nothing leaks between tasks on a pooled thread: if there was no context
+     *     before the task, there is none after it.
      */
     private TaskDecorator securityContextPropagatingDecorator() {
         return runnable -> {
-            SecurityContext context = SecurityContextHolder.getContext();
+            SecurityContext captured = SecurityContextHolder.createEmptyContext();
+            captured.setAuthentication(SecurityContextHolder.getContext().getAuthentication());
             return () -> {
+                SecurityContext previous = SecurityContextHolder.getContext();
+                boolean hadPrevious = previous.getAuthentication() != null;
                 try {
-                    SecurityContextHolder.setContext(context);
+                    SecurityContextHolder.setContext(captured);
                     runnable.run();
                 } finally {
-                    SecurityContextHolder.clearContext();
+                    if (hadPrevious) {
+                        SecurityContextHolder.setContext(previous);
+                    } else {
+                        SecurityContextHolder.clearContext();
+                    }
                 }
             };
         };

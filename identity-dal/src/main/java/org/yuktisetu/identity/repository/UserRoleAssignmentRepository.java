@@ -5,8 +5,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.yuktisetu.identity.db.UserRoleAssignment;
+import org.yuktisetu.identity.model.NotifyTarget;
 import org.yuktisetu.identity.model.RoleType;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -146,6 +148,41 @@ public interface UserRoleAssignmentRepository extends JpaRepository<UserRoleAssi
     List<UserRoleAssignment> findAllByUser_Id(Long userId);
 
     long countByAssignedBy_Id(Long userId);
+
+    // ------------------------------------------------------------------
+    // Notification audiences.
+    // ------------------------------------------------------------------
+
+    /**
+     * The TnP staff who should hear about something that happened to a drive in
+     * one of these colleges.
+     *
+     * Two populations in one query: staff scoped to a college the drive targets,
+     * and trust-wide admins, whose assignment carries college_id IS NULL and who
+     * would be missed entirely by an `in :collegeIds` filter alone -- the same
+     * null-scope trap the trust-wide lookups above exist to avoid.
+     *
+     * DISTINCT because one person can hold two assignments that both match (a
+     * coordinator for two colleges of the same trust), and mailing them twice
+     * for one event is exactly the spam this is supposed to avoid. Dedupe here,
+     * in the database, rather than in every caller.
+     *
+     * Filters are the standing rule for role queries: assignment active, account
+     * not deleted, account ACTIVE. An invitee who has never logged in is not
+     * someone to escalate a failed eligibility run to.
+     */
+    @Query("""
+            select distinct new org.yuktisetu.identity.model.NotifyTarget(
+                       a.user.id, a.user.email, a.user.firstName, a.user.lastName)
+              from UserRoleAssignment a
+             where a.role in :roles
+               and a.isActive = true
+               and a.user.isDeleted = false
+               and a.user.status = org.yuktisetu.identity.model.UserStatus.ACTIVE
+               and (a.college is null or a.college.id in :collegeIds)
+            """)
+    List<NotifyTarget> findStaffAudience(@Param("roles") Collection<RoleType> roles,
+                                         @Param("collegeIds") Collection<Long> collegeIds);
 
     long countByRevokedBy_Id(Long userId);
 }

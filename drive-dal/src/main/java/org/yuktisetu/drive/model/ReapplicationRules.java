@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -43,6 +42,10 @@ import java.util.Objects;
  *      admits one who did not.
  */
 public final class ReapplicationRules {
+
+    /** Offer dates are calendar dates in India; "start of that day" means midnight IST, not midnight UTC. */
+    private static final java.time.ZoneId IST = java.time.ZoneId.of("Asia/Kolkata");
+
 
     private ReapplicationRules() {}
 
@@ -91,7 +94,7 @@ public final class ReapplicationRules {
                     .max(Comparator.naturalOrder())
                     .ifPresent(latest -> {
                         long days = Duration.between(
-                                latest.atStartOfDay().toInstant(ZoneOffset.UTC), Instant.now()).toDays();
+                                latest.atStartOfDay(IST).toInstant(), Instant.now()).toDays();
                         if (days < policy.getMinDaysSinceLastOffer()) {
                             failures.add(EligibilityFailureCode.COOLING_OFF_ACTIVE);
                         }

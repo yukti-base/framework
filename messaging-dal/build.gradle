@@ -11,3 +11,18 @@ dependencies {
     implementation "org.postgresql:postgresql:${rootProject.ext.postgresVersion}"
 
 }
+
+// Test-only. Dispatches encodes the anti-spam policy -- which notification
+// reaches which channel, and how a large audience is split. Those are product
+// decisions, not implementation detail, so they get a regression net: a future
+// edit that quietly adds EMAIL to a staff notice should fail a test, not
+// surprise a coordinator with four hundred emails on drive night.
+dependencies {
+    testImplementation platform("org.junit:junit-bom:5.11.3")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

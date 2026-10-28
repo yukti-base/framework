@@ -157,4 +157,194 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
                  @Param("fromStatus") ApplicationStatus fromStatus,
                  @Param("toStatus") ApplicationStatus toStatus,
                  @Param("sealedAt") Instant sealedAt);
+
+    /**
+     * Retires every live application on a cancelled drive, in one statement.
+     *
+     * Without this, cancelling a drive flipped only the posting and left its
+     * applications at APPLIED or IN_REVIEW against a CANCELLED posting. CANCELLED
+     * is terminal for the posting, so those rows were unreachable by any further
+     * transition -- permanently stuck, and still rendered to the student as an
+     * application in progress.
+     *
+     * fromStatuses is passed in rather than hardcoded so it can only ever be
+     * ApplicationStatusTransitions.cancellableStatuses(); OFFERED and the two
+     * offer outcomes are excluded there on purpose.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update JobApplication a
+               set a.status = :toStatus,
+                   a.updatedBy = :actorUserId
+             where a.posting.id = :postingId
+               and a.status in :fromStatuses
+               and a.isDeleted = false
+            """)
+    int cancelPool(@Param("postingId") Long postingId,
+                   @Param("fromStatuses") Collection<ApplicationStatus> fromStatuses,
+                   @Param("toStatus") ApplicationStatus toStatus,
+                   @Param("actorUserId") Long actorUserId);
+
+    /**
+     * Writes the audit trail for a bulk status sweep as ONE insert.
+     *
+     * application_status_history is append-only and is the TnP's only answer to a
+     * student disputing what they saw, so a bulk sweep that skipped it would
+     * silently create exactly the undocumented state change the table exists to
+     * prevent. Doing it as INSERT .. SELECT keeps a 2000-applicant drive at one
+     * statement instead of 2000 entity saves inside a transaction that holds a
+     * write lock on the posting row.
+     *
+     * from_status is read from the row's CURRENT value, so this must be called
+     * BEFORE the UPDATE that changes it.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            INSERT INTO application_status_history (
+                    application_id, from_status, to_status, changed_at, changed_by,
+                    actor_kind, reason,
+                    created_at, created_by, updated_at, updated_by, is_deleted)
+            SELECT a.id, a.status, :toStatus, :changedAt, :actorUserId,
+                   :actorKind, :reason,
+                   :changedAt, :actorUserId, :changedAt, :actorUserId, false
+              FROM job_applications a
+             WHERE a.posting_id = :postingId
+               AND a.status IN (:fromStatuses)
+               AND a.is_deleted = false
+            """, nativeQuery = true)
+    int recordBulkHistory(@Param("postingId") Long postingId,
+                          @Param("fromStatuses") Collection<String> fromStatuses,
+                          @Param("toStatus") String toStatus,
+                          @Param("changedAt") Instant changedAt,
+                          @Param("actorUserId") Long actorUserId,
+                          @Param("actorKind") String actorKind,
+                          @Param("reason") String reason);
+
+    /**
+     * The sealed pool the scoring engine ranks: [applicationId, studentUserId].
+     *
+     * IN_REVIEW only -- withdrawn, disqualified and cancelled applications are not
+     * in a pool. Students the TnP decided on in the coding review are excluded:
+     * a reviewed student is never scored, whichever way the decision went.
+     */
+    @Query(value = """
+            SELECT a.id, a.student_user_id
+              FROM job_applications a
+             WHERE a.posting_id = :postingId
+               AND a.status = 'IN_REVIEW'
+               AND a.is_deleted = false
+               AND NOT EXISTS (SELECT 1 FROM application_coding_reviews r WHERE r.application_id = a.id)
+             ORDER BY a.id
+            """, nativeQuery = true)
+    List<Object[]> findScoringPool(@Param("postingId") Long postingId);
+
+    /** [applicationId, studentUserId, status] for every application still in the sealed pool. */
+    @Query(value = """
+            SELECT a.id, a.student_user_id, a.status
+              FROM job_applications a
+             WHERE a.posting_id = :postingId
+               AND a.status = 'IN_REVIEW'
+               AND a.is_deleted = false
+             ORDER BY a.id
+            """, nativeQuery = true)
+    List<Object[]> findSealedPool(@Param("postingId") Long postingId);
+
+    /**
+     * Audit rows for a status change on specific applications, as one insert.
+     * Same contract as recordBulkHistory: call it BEFORE the update.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            INSERT INTO application_status_history (
+                    application_id, from_status, to_status, changed_at, changed_by,
+                    actor_kind, reason,
+                    created_at, created_by, updated_at, updated_by, is_deleted)
+            SELECT a.id, a.status, :toStatus, :changedAt, :actorUserId,
+                   :actorKind, :reason,
+                   :changedAt, :actorUserId, :changedAt, :actorUserId, false
+              FROM job_applications a
+             WHERE a.id IN (:ids)
+               AND a.status = :fromStatus
+               AND a.is_deleted = false
+            """, nativeQuery = true)
+    int recordHistoryForIds(@Param("ids") Collection<Long> ids,
+                            @Param("fromStatus") String fromStatus,
+                            @Param("toStatus") String toStatus,
+                            @Param("changedAt") Instant changedAt,
+                            @Param("actorUserId") Long actorUserId,
+                            @Param("actorKind") String actorKind,
+                            @Param("reason") String reason);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update JobApplication a
+               set a.status = :toStatus,
+                   a.updatedBy = :actorUserId
+             where a.id in :ids
+               and a.status = :fromStatus
+               and a.isDeleted = false
+            """)
+    int updateStatusForIds(@Param("ids") Collection<Long> ids,
+                           @Param("fromStatus") ApplicationStatus fromStatus,
+                           @Param("toStatus") ApplicationStatus toStatus,
+                           @Param("actorUserId") Long actorUserId);
+
+    @Query("""
+            select a.id from JobApplication a
+             where a.posting.id = :postingId
+               and a.status = :status
+               and a.isDeleted = false
+            """)
+    List<Long> findIdsByPostingAndStatus(@Param("postingId") Long postingId,
+                                         @Param("status") ApplicationStatus status);
+
+    @Query("""
+            select count(a) from JobApplication a
+             where a.posting.id = :postingId
+               and a.status in :statuses
+               and a.isDeleted = false
+            """)
+    long countByPostingAndStatusIn(@Param("postingId") Long postingId,
+                                   @Param("statuses") Collection<ApplicationStatus> statuses);
+
+    /**
+     * A reopened drive: back to APPLIED and unsealed, so the next seal takes
+     * these applications into the new pool. Record history BEFORE calling it.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update JobApplication a
+               set a.status = org.yuktisetu.drive.model.ApplicationStatus.APPLIED,
+                   a.sealedAt = null,
+                   a.updatedBy = :actorUserId
+             where a.id in :ids
+               and a.status = :fromStatus
+               and a.isDeleted = false
+            """)
+    int reopenForIds(@Param("ids") Collection<Long> ids,
+                     @Param("fromStatus") ApplicationStatus fromStatus,
+                     @Param("actorUserId") Long actorUserId);
+
+    /**
+     * Which of these drives the student is "under re-review" on: shortlisted, then
+     * the drive was reopened, and not yet shortlisted again. Derived from history
+     * (decided 2026-10-03: a display state, not an ApplicationStatus).
+     */
+    @Query(value = """
+            SELECT a.posting_id
+              FROM job_applications a
+              JOIN job_postings p ON p.id = a.posting_id
+             WHERE a.student_user_id = :studentUserId
+               AND a.posting_id IN (:postingIds)
+               AND a.is_deleted = false
+               AND a.status IN ('APPLIED', 'IN_REVIEW')
+               AND p.reopened_at IS NOT NULL
+               AND EXISTS (SELECT 1 FROM application_status_history h
+                            WHERE h.application_id = a.id
+                              AND h.from_status = 'SHORTLISTED'
+                              AND h.to_status = 'APPLIED'
+                              AND h.changed_at >= p.reopened_at)
+            """, nativeQuery = true)
+    List<Long> findUnderReReview(@Param("studentUserId") Long studentUserId,
+                                 @Param("postingIds") Collection<Long> postingIds);
 }

@@ -97,4 +97,19 @@ public class NotificationDelivery extends NotificationAuditableEntity {
 
     @Column(name = "template_key", length = 96)
     private String templateKey;
+
+    /**
+     * The EMAIL template rendered for this recipient at ingestion -- the HTML the
+     * drainer sends. Null on in-app and group-alias rows, and on email rows queued
+     * before 2026-10-27, which fall back to the in-app text body.
+     *
+     * Stored per delivery rather than on the shared notifications row because that
+     * row is the in-app content: until this column existed every email was sent
+     * with the in-app plain text and the HTML templates were never used.
+     */
+    @Column(name = "rendered_subject", length = 255)
+    private String renderedSubject;
+
+    @Column(name = "rendered_body", columnDefinition = "text")
+    private String renderedBody;
 }

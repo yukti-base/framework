@@ -1,5 +1,6 @@
 package org.yuktisetu.drive.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.yuktisetu.drive.db.PostingTarget;
@@ -10,6 +11,7 @@ import java.util.List;
 @Repository
 public interface PostingTargetRepository extends JpaRepository<PostingTarget, Long> {
 
+    @EntityGraph(attributePaths = "degree")
     List<PostingTarget> findByPosting_IdAndIsDeletedFalse(Long postingId);
 
     /**
@@ -17,6 +19,7 @@ public interface PostingTargetRepository extends JpaRepository<PostingTarget, Lo
      * single-posting lookup above when rendering a list -- otherwise a 50-row page
      * issues 50 of these, which is the N+1 the standing rule forbids.
      */
+    @EntityGraph(attributePaths = "degree")
     List<PostingTarget> findByPosting_IdInAndIsDeletedFalse(Collection<Long> postingIds);
 
     boolean existsByPosting_IdAndTargetKeyAndIsDeletedFalse(Long postingId, String targetKey);

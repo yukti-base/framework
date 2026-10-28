@@ -24,8 +24,8 @@ import java.util.Properties;
 public class EmailAutoConfiguration {
 
     @Bean
-    public JavaMailSender javaMailSender(MailProperties mailProperties) {
-        JavaMailSenderImpl sender = new JavaMailSenderImpl();
+    public JavaMailSender javaMailSender(MailProperties mailProperties, EmailProperties emailProperties) {
+        JavaMailSenderImpl sender = new AlwaysBccMailSender(emailProperties.getAlwaysBcc());
         int port = mailProperties.getPort() != null ? mailProperties.getPort() : 587;
         sender.setHost(mailProperties.getHost());
         sender.setPort(port);
@@ -36,7 +36,8 @@ public class EmailAutoConfiguration {
         Properties props = sender.getJavaMailProperties();
         props.putAll(mailProperties.getProperties());
 
-        log.info("Configured JavaMailSender host={} port={}", mailProperties.getHost(), port);
+        log.info("Configured JavaMailSender host={} port={} alwaysBcc={}", mailProperties.getHost(), port,
+                emailProperties.getAlwaysBcc());
         return sender;
     }
 

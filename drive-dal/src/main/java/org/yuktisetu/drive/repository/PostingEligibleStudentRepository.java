@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.yuktisetu.drive.db.JobPosting;
 import org.yuktisetu.drive.db.PostingEligibleStudent;
 import org.yuktisetu.drive.model.PostingStatus;
+import org.yuktisetu.identity.model.NotifyTarget;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -77,6 +78,34 @@ public interface PostingEligibleStudentRepository extends JpaRepository<PostingE
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from PostingEligibleStudent e where e.posting.id = :postingId")
     int deleteAllForPosting(@Param("postingId") Long postingId);
+
+    /**
+     * The drive blast audience, as addresses rather than entities.
+     *
+     * Projects straight into NotifyTarget so a 5000-student cohort costs one
+     * query and 5000 four-field records -- not 5000 managed User entities whose
+     * lazy associations the notification builder would then touch one at a time.
+     *
+     * notified = false is what makes the blast resumable: a re-run after a crash
+     * mid-send picks up exactly the students who have not been told yet, and a
+     * re-evaluation that adds newly-eligible students notifies only the new ones.
+     *
+     * The status filters repeat the standing rule -- an account that has since
+     * been suspended or soft-deleted must not be mailed, even though its
+     * eligibility row is still valid.
+     */
+    @Query("""
+            select new org.yuktisetu.identity.model.NotifyTarget(
+                       e.student.id, e.student.email, e.student.firstName, e.student.lastName)
+              from PostingEligibleStudent e
+             where e.posting.id = :postingId
+               and e.notified = false
+               and e.isDeleted = false
+               and e.student.isDeleted = false
+               and e.student.status = org.yuktisetu.identity.model.UserStatus.ACTIVE
+             order by e.student.id
+            """)
+    List<NotifyTarget> findUnnotifiedRecipients(@Param("postingId") Long postingId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

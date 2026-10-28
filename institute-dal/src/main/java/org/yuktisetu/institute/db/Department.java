@@ -20,7 +20,10 @@ import org.yuktisetu.persistence.BaseAuditableEntity;
 @Table(
         name = "departments",
         uniqueConstraints = @UniqueConstraint(name = "uk_department_college_code", columnNames = {"college_id", "code"}),
-        indexes = @Index(name = "idx_department_college_id", columnList = "college_id")
+        indexes = {
+                @Index(name = "idx_department_college_id", columnList = "college_id"),
+                @Index(name = "idx_department_degree_id", columnList = "degree_id")
+        }
 )
 @Getter
 @Setter
@@ -29,6 +32,15 @@ public class Department extends BaseAuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "college_id", nullable = false, foreignKey = @ForeignKey(name = "fk_department_college"))
     private College college;
+
+    /**
+     * The programme this department belongs to. Exactly one: the same stream taught
+     * in two programmes is two departments with two codes. Must be one of
+     * college.degrees (checked by the services).
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "degree_id", nullable = false, foreignKey = @ForeignKey(name = "fk_department_degree"))
+    private Degree degree;
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;

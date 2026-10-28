@@ -2,6 +2,7 @@ package org.yuktisetu.institute.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.yuktisetu.institute.db.College;
 import org.yuktisetu.institute.model.TenantStatus;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CollegeRepository extends JpaRepository<College, Long> {
+    @EntityGraph(attributePaths = "degrees")
     List<College> findByTrustIdAndIsDeletedFalse(Long trustId);
 
     // Paged variant for the admin "Colleges" listing screen — not that
@@ -18,6 +20,7 @@ public interface CollegeRepository extends JpaRepository<College, Long> {
     // also list soft-deleted/inactive ones together, so keep it uniform.
     Page<College> findByTrustIdAndIsDeletedFalse(Long trustId, Pageable pageable);
 
+    @EntityGraph(attributePaths = "degrees")
     Optional<College> findByIdAndIsDeletedFalse(Long id);
 
     List<College> findByTrustIdAndStatusAndIsDeletedFalse(Long trustId, TenantStatus status);
@@ -39,6 +42,7 @@ public interface CollegeRepository extends JpaRepository<College, Long> {
      * standing rule forbids inside a loop. Callers fetch the whole set up front
      * and index it by code in a HashMap.
      */
+    @EntityGraph(attributePaths = "degrees")
     List<College> findByCodeInAndIsDeletedFalse(Collection<String> codes);
 
 }

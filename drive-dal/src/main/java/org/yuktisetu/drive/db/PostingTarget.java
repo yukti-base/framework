@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.yuktisetu.persistence.BaseAuditableEntity;
 import org.yuktisetu.institute.db.College;
+import org.yuktisetu.institute.db.Degree;
 import org.yuktisetu.institute.db.Department;
 
 /**
@@ -62,9 +63,11 @@ public class PostingTarget extends BaseAuditableEntity {
     @Column(name = "batch_year", nullable = false)
     private Integer batchYear;
 
-    /** Matches UserRoleAssignment.degree, e.g. "B.Tech". Null = any degree. */
-    @Column(name = "degree", length = 32)
-    private String degree;
+    /** Matches UserRoleAssignment.degree. Null = any degree. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "degree_id",
+            foreignKey = @ForeignKey(name = "fk_posting_target_degree"))
+    private Degree degree;
 
     /**
      * Service-derived: "c:{collegeId}|d:{deptId|*}|b:{year}|g:{degree|*}".
@@ -78,5 +81,6 @@ public class PostingTarget extends BaseAuditableEntity {
     private String targetKey;
 
     public Long getCollegeId() { return college != null ? college.getId() : null; }
+    public Long getDegreeId() { return degree != null ? degree.getId() : null; }
     public Long getDepartmentId() { return department != null ? department.getId() : null; }
 }

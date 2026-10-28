@@ -22,6 +22,19 @@ public final class DriveTopics {
      */
     public static final String NOTIFICATION_DISPATCH = "yuktisetu.notification.dispatch.v1";
 
+    /**
+     * yuktisetu-scraper (via the shared outbox) publishes when a scrape job ends;
+     * drive-service consumes it to settle application captures.
+     */
+    public static final String CODING_SCRAPE_COMPLETED = "yuktisetu.coding.scrape.completed.v1";
+
+    /**
+     * drive-service publishes exactly once per drive when it may be scored; the
+     * scoring engine consumes it. Independent of scraping and review: by the time
+     * this exists, both are finished.
+     */
+    public static final String DRIVE_READY_FOR_SCORING = "yuktisetu.drive.scoring.ready.v1";
+
     public static String dlqFor(String topic) {
         return topic + ".dlq";
     }

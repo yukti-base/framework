@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,13 +62,34 @@ class StatusTransitionsTest {
         @DisplayName("terminal states have no outgoing transitions at all")
         void terminalStatesAreTerminal() {
             for (ApplicationStatus terminal : new ApplicationStatus[]{
-                    ApplicationStatus.REJECTED, ApplicationStatus.DISQUALIFIED,
+                    ApplicationStatus.DISQUALIFIED,
                     ApplicationStatus.OFFER_ACCEPTED, ApplicationStatus.OFFER_DECLINED}) {
                 for (ApplicationStatus to : ApplicationStatus.values()) {
                     assertFalse(ApplicationStatusTransitions.canTransition(terminal, to),
                             terminal + " must be terminal but allows -> " + to);
                 }
             }
+        }
+
+        @Test
+        @DisplayName("REJECTED leads only back to APPLIED, and only because a drive was reopened")
+        void rejectedReopensOnly() {
+            for (ApplicationStatus to : ApplicationStatus.values()) {
+                assertEquals(to == ApplicationStatus.APPLIED,
+                        ApplicationStatusTransitions.canTransition(ApplicationStatus.REJECTED, to),
+                        "REJECTED -> " + to);
+            }
+        }
+
+        @Test
+        @DisplayName("a reopen returns the pool statuses to APPLIED, never anything past SHORTLISTED")
+        void reopenReachesOnlyThePool() {
+            for (ApplicationStatus from : new ApplicationStatus[]{
+                    ApplicationStatus.IN_REVIEW, ApplicationStatus.SHORTLISTED, ApplicationStatus.REJECTED}) {
+                assertTrue(ApplicationStatusTransitions.canTransition(from, ApplicationStatus.APPLIED), from.name());
+            }
+            assertFalse(ApplicationStatusTransitions.canTransition(ApplicationStatus.OFFERED, ApplicationStatus.APPLIED));
+            assertFalse(ApplicationStatusTransitions.canTransition(ApplicationStatus.DISQUALIFIED, ApplicationStatus.APPLIED));
         }
 
         @Test
@@ -112,11 +134,15 @@ class StatusTransitionsTest {
         }
 
         @Test
-        @DisplayName("a sealed posting cannot reopen for applications")
-        void sealedCannotReopen() {
-            assertFalse(PostingStatusTransitions.canTransition(
+        @DisplayName("a sealed posting reopens only to PUBLISHED, by a deadline extension (2026-10-27)")
+        void sealedReopensOnlyToPublished() {
+            assertTrue(PostingStatusTransitions.canTransition(
                     PostingStatus.APPLICATIONS_CLOSED, PostingStatus.PUBLISHED),
-                    "reopening a sealed pool would admit students after the deadline");
+                    "the TnP extends the deadline and applications reopen until the new one");
+            assertFalse(PostingStatusTransitions.canTransition(
+                    PostingStatus.APPLICATIONS_CLOSED, PostingStatus.DRAFT));
+            assertFalse(PostingStatusTransitions.isEditable(PostingStatus.APPLICATIONS_CLOSED),
+                    "a sealed drive is still not edited in place; reopening is its own action");
         }
 
         @Test
