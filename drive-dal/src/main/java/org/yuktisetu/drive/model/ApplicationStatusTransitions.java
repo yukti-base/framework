@@ -10,11 +10,11 @@ import static org.yuktisetu.drive.model.ApplicationStatus.*;
 /**
  * Legal application lifecycle moves.
  *
- * Only APPLIED, WITHDRAWN, DISQUALIFIED, IN_REVIEW and DRIVE_CANCELLED are
- * reachable today -- everything else past IN_REVIEW belongs to the shortlisting
- * engine, which is not built. The transitions are declared anyway so the enum never needs a
- * migration, and REACHABLE_NOW lets the service reject the rest explicitly
- * rather than by accident.
+ * OFFER_ACCEPTED and OFFER_DECLINED are not reachable yet: the student's answer
+ * to an offer is not recorded in the app. Everything else is -- SHORTLISTED and
+ * REJECTED by the shortlist and the drive's rounds, OFFERED by clearing the
+ * final round. REACHABLE_NOW lets a service reject the rest explicitly rather
+ * than by accident.
  *
  * WITHDRAWN -> APPLIED is intentional: re-applying before the deadline revives
  * the SAME row, which is what keeps uk_application_posting_student absolute.
@@ -43,8 +43,14 @@ public final class ApplicationStatusTransitions {
         // SHORTLISTED goes back -- a drive with offers cannot be reopened.
         ALLOWED.put(IN_REVIEW, EnumSet.of(SHORTLISTED, REJECTED, DISQUALIFIED, DRIVE_CANCELLED, APPLIED));
         ALLOWED.put(SHORTLISTED, EnumSet.of(OFFERED, REJECTED, DISQUALIFIED, DRIVE_CANCELLED, APPLIED));
-        ALLOWED.put(OFFERED, EnumSet.of(OFFER_ACCEPTED, OFFER_DECLINED));
-        ALLOWED.put(REJECTED, EnumSet.of(APPLIED));
+        // -> REJECTED from OFFERED is a coordinator correcting the final round
+        // (2026-10-30): the student was marked advanced by mistake. The offer
+        // record is revoked in the same transaction.
+        ALLOWED.put(OFFERED, EnumSet.of(OFFER_ACCEPTED, OFFER_DECLINED, REJECTED));
+        // -> SHORTLISTED / OFFERED from REJECTED is the same kind of correction
+        // the other way: wrongly marked not advanced or absent in a published
+        // round, put back in the drive (or offered, if it was the final round).
+        ALLOWED.put(REJECTED, EnumSet.of(APPLIED, SHORTLISTED, OFFERED));
         ALLOWED.put(DISQUALIFIED, EnumSet.noneOf(ApplicationStatus.class));
         ALLOWED.put(OFFER_ACCEPTED, EnumSet.noneOf(ApplicationStatus.class));
         ALLOWED.put(OFFER_DECLINED, EnumSet.noneOf(ApplicationStatus.class));
@@ -60,7 +66,8 @@ public final class ApplicationStatusTransitions {
 
     /** What this phase of the system may actually set. */
     private static final Set<ApplicationStatus> REACHABLE_NOW =
-            EnumSet.of(APPLIED, WITHDRAWN, DISQUALIFIED, IN_REVIEW, DRIVE_CANCELLED);
+            EnumSet.of(APPLIED, WITHDRAWN, DISQUALIFIED, IN_REVIEW, DRIVE_CANCELLED,
+                    SHORTLISTED, REJECTED, OFFERED);
 
     public static boolean canTransition(ApplicationStatus from, ApplicationStatus to) {
         return ALLOWED.getOrDefault(from, Set.of()).contains(to);

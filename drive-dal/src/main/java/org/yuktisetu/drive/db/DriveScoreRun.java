@@ -35,7 +35,7 @@ import java.time.Instant;
 @Table(
         name = "drive_score_runs",
         // One ACTIVE run per drive is a partial unique index (superseded_at IS
-        // NULL) in .schema/2026-10-27-drive-reopen.sql; JPA cannot express it.
+        // NULL) in infra/migrations/2026-10-27-drive-reopen.sql; JPA cannot express it.
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_score_run_event", columnNames = "ready_event_id")
         }

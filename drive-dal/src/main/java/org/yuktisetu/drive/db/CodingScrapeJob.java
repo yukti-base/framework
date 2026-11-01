@@ -20,7 +20,7 @@ import java.time.Instant;
  * inside the apply transaction (it needs ON CONFLICT and FOR UPDATE), and the
  * Python worker owns every transition after that. The partial unique index on
  * pending jobs, the trigger that wakes the worker and the column defaults live
- * only in .schema/2026-10-15-apply-time-coding-capture.sql.
+ * only in infra/migrations/2026-10-15-apply-time-coding-capture.sql.
  *
  * Statuses: PENDING, RUNNING, DONE, FAILED. last_status carries the scraper's
  * own verdict (OK, HANDLE_NOT_FOUND, PLATFORM_ERROR, PARSE_FAILED, RATE_LIMITED).

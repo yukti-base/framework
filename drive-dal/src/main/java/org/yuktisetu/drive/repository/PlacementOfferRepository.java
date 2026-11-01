@@ -37,4 +37,7 @@ public interface PlacementOfferRepository extends JpaRepository<PlacementOffer, 
     // Cascade guards.
     long countByCompany_Id(Long companyId);
     long countByPosting_Id(Long postingId);
+
+    /** The offers a drive's rounds recorded for these applications, live or not. */
+    List<PlacementOffer> findByApplication_IdInAndIsDeletedFalse(Collection<Long> applicationIds);
 }

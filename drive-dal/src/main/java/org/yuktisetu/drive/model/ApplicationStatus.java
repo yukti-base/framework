@@ -1,9 +1,13 @@
 package org.yuktisetu.drive.model;
 
 /**
- * Only APPLIED, WITHDRAWN, DISQUALIFIED, IN_REVIEW and DRIVE_CANCELLED are
- * reachable today. The rest are declared so the enum never needs a migration when
- * the shortlisting engine lands; ApplicationStatusTransitions rejects them until then.
+ * OFFER_ACCEPTED and OFFER_DECLINED are declared but not reachable yet; see
+ * ApplicationStatusTransitions.
+ *
+ * During a drive's rounds a student stays SHORTLISTED while they keep
+ * advancing; publishing a round makes everyone who did not advance REJECTED,
+ * and clearing the final round makes them OFFERED. Which round they are in is
+ * read from round_results, never stored here.
  */
 public enum ApplicationStatus {
     APPLIED,

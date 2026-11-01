@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,6 +28,9 @@ import org.yuktisetu.identity.db.User;
 
 @Entity
 @Table(name = "student_profiles",
+        // A PRN names one student. Null is allowed (students created before PRNs
+        // were kept, 2026-10-30); Postgres permits any number of NULLs here.
+        uniqueConstraints = @UniqueConstraint(name = "uk_student_profile_prn", columnNames = "prn"),
         indexes = {
                 // Drive targeting matches a posting's batch_year against this
                 // column for every candidate. Without it the join degrades to a
@@ -52,6 +56,14 @@ public class StudentProfile {
     private User user;
 
     // Basic Information
+    /**
+     * The university PRN, from the student import. Kept for drive-day sorting
+     * (class and department lists, attendance), never for matching: a list
+     * from a company is matched by email.
+     */
+    @Column(name = "prn", length = 32)
+    private String prn;
+
     private Date dateOfBirth;
     private String address;
 

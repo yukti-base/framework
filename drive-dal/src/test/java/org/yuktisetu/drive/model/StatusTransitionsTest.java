@@ -72,12 +72,28 @@ class StatusTransitionsTest {
         }
 
         @Test
-        @DisplayName("REJECTED leads only back to APPLIED, and only because a drive was reopened")
-        void rejectedReopensOnly() {
+        @DisplayName("REJECTED leads back to APPLIED (reopen), or SHORTLISTED / OFFERED (a round correction)")
+        void rejectedReopensOrIsCorrected() {
             for (ApplicationStatus to : ApplicationStatus.values()) {
-                assertEquals(to == ApplicationStatus.APPLIED,
+                boolean expected = to == ApplicationStatus.APPLIED
+                        || to == ApplicationStatus.SHORTLISTED
+                        || to == ApplicationStatus.OFFERED;
+                assertEquals(expected,
                         ApplicationStatusTransitions.canTransition(ApplicationStatus.REJECTED, to),
                         "REJECTED -> " + to);
+            }
+        }
+
+        @Test
+        @DisplayName("an offer can only be answered, or undone by correcting the final round")
+        void offeredOutgoing() {
+            for (ApplicationStatus to : ApplicationStatus.values()) {
+                boolean expected = to == ApplicationStatus.OFFER_ACCEPTED
+                        || to == ApplicationStatus.OFFER_DECLINED
+                        || to == ApplicationStatus.REJECTED;
+                assertEquals(expected,
+                        ApplicationStatusTransitions.canTransition(ApplicationStatus.OFFERED, to),
+                        "OFFERED -> " + to);
             }
         }
 
@@ -100,17 +116,12 @@ class StatusTransitionsTest {
         }
 
         @Test
-        @DisplayName("only the four statuses this phase implements are reachable now")
+        @DisplayName("everything but the student's answer to an offer is reachable now")
         void reachableNowIsTheBuiltSubset() {
-            assertTrue(ApplicationStatusTransitions.isReachableNow(ApplicationStatus.APPLIED));
-            assertTrue(ApplicationStatusTransitions.isReachableNow(ApplicationStatus.WITHDRAWN));
-            assertTrue(ApplicationStatusTransitions.isReachableNow(ApplicationStatus.IN_REVIEW));
-            assertTrue(ApplicationStatusTransitions.isReachableNow(ApplicationStatus.DISQUALIFIED));
-
-            // The shortlisting engine is not built; these must stay unreachable
-            // so nothing sets a status the rest of the system cannot interpret.
-            assertFalse(ApplicationStatusTransitions.isReachableNow(ApplicationStatus.SHORTLISTED));
-            assertFalse(ApplicationStatusTransitions.isReachableNow(ApplicationStatus.OFFERED));
+            for (ApplicationStatus s : ApplicationStatus.values()) {
+                boolean expected = s != ApplicationStatus.OFFER_ACCEPTED && s != ApplicationStatus.OFFER_DECLINED;
+                assertEquals(expected, ApplicationStatusTransitions.isReachableNow(s), s.name());
+            }
         }
     }
 

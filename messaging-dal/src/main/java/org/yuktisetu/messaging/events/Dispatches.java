@@ -508,4 +508,184 @@ public final class Dispatches {
                 List.of(),
                 IN_APP_ONLY);
     }
+
+    // ------------------------------------------------------------------ rounds
+
+    /**
+     * A round's result for a student, or the drive ending under them. The
+     * outcome sentence is written by the caller (it knows the round and why);
+     * the renderer runs in TEXT mode, without conditionals.
+     *
+     * @param nextStep for an advancing student, the next round's details (or that
+     *                 they will be told when it is scheduled); empty otherwise
+     */
+    public static NotificationDispatchEvent roundResult(
+            String companyName,
+            String postingTitle,
+            String roundName,
+            String outcomeText,
+            boolean advanced,
+            String nextStep,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                advanced ? "SUCCESS" : "INFO",
+                NotificationTemplates.ROUND_RESULT,
+                roundName + " result: " + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "roundName", nullSafe(roundName),
+                        "outcome", nullSafe(outcomeText),
+                        "nextStep", nullSafe(nextStep),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
+
+    /**
+     * The current round was scheduled or its details changed.
+     *
+     * @param changed true when the round had already been announced -- the
+     *                subject says "updated" so a student does not keep the old time
+     */
+    public static NotificationDispatchEvent roundScheduled(
+            String companyName,
+            String postingTitle,
+            String roundName,
+            String whenText,
+            String venue,
+            String instructions,
+            boolean changed,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                changed ? "WARNING" : "INFO",
+                NotificationTemplates.ROUND_SCHEDULED,
+                (changed ? "Updated: " : "") + roundName + " for " + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "roundName", nullSafe(roundName),
+                        "when", whenText == null || whenText.isBlank() ? "To be announced" : whenText,
+                        "venue", venue == null || venue.isBlank() ? "To be announced" : venue,
+                        "instructions", nullSafe(instructions),
+                        "note", changed ? "The details of this round have changed. Please use these, not the earlier ones."
+                                : "You are a candidate for this round.",
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
+
+    /** A coordinator corrected a published result. Always emailed: it changes what the student was told. */
+    public static NotificationDispatchEvent roundResultCorrected(
+            String companyName,
+            String postingTitle,
+            String roundName,
+            String fromLabel,
+            String toLabel,
+            String reason,
+            String nextStep,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                "WARNING",
+                NotificationTemplates.ROUND_RESULT_CORRECTED,
+                "Corrected: " + roundName + " result for " + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "roundName", nullSafe(roundName),
+                        "fromOutcome", nullSafe(fromLabel),
+                        "toOutcome", nullSafe(toLabel),
+                        "reason", nullSafe(reason),
+                        "nextStep", nullSafe(nextStep),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
+
+    /** Cleared the final round. */
+    public static NotificationDispatchEvent driveOffered(
+            String companyName,
+            String postingTitle,
+            String opportunityLabel,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "OFFER_RECORDED",
+                "SUCCESS",
+                NotificationTemplates.DRIVE_OFFERED,
+                "Congratulations! Selected: " + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "opportunity", nullSafe(opportunityLabel),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
+
+    /**
+     * A drive was cancelled after the student applied. Their application is now
+     * "drive cancelled"; the TnP's reason is quoted so nobody has to ask.
+     */
+    public static NotificationDispatchEvent driveCancelled(
+            String companyName,
+            String postingTitle,
+            String reason,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                "WARNING",
+                NotificationTemplates.DRIVE_CANCELLED,
+                "Cancelled: " + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "reason", nullSafe(reason),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
+
+    /**
+     * A department's results for an ended drive, to that department's faculty
+     * coordinators. Each recipient's variables carry THEIR department's rows
+     * ("rows": a list of maps with prn, name, email, reached, outcome), so one
+     * dispatch serves every department without one message each.
+     */
+    public static NotificationDispatchEvent driveDepartmentReport(
+            String companyName,
+            String postingTitle,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                "INFO",
+                NotificationTemplates.DRIVE_DEPARTMENT_REPORT,
+                "Drive results by department: " + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
 }

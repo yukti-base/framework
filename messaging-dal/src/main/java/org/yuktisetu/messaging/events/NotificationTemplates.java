@@ -63,6 +63,28 @@ public final class NotificationTemplates {
     /** A sealed drive's deadline was extended: applications are open again. */
     public static final String DRIVE_REOPENED = "drive-reopened";
 
+    /**
+     * A round's results were published. One template for every outcome --
+     * advanced, not advanced, absent -- worded by the builder, with the next
+     * round's details when the student goes on.
+     */
+    public static final String ROUND_RESULT = "round-result";
+
+    /** The current round's date, venue or instructions were set or changed. */
+    public static final String ROUND_SCHEDULED = "round-scheduled";
+
+    /** A coordinator corrected a published round result, with their reason. */
+    public static final String ROUND_RESULT_CORRECTED = "round-result-corrected";
+
+    /**
+     * The student cleared the final round. No offer letter -- the company sends
+     * that outside the app -- just the congratulations and what was recorded.
+     */
+    public static final String DRIVE_OFFERED = "drive-offered";
+
+    /** A drive the student applied to was cancelled by the TnP, with the reason given. */
+    public static final String DRIVE_CANCELLED = "drive-cancelled";
+
     // --- Staff-facing -----------------------------------------------------
     //
     // Deliberately few. A notification per application would make a 400-student
@@ -88,4 +110,11 @@ public final class NotificationTemplates {
      * indistinguishable from a drive that broke.
      */
     public static final String CODING_DATA_REVIEW_REQUIRED = "coding-data-review-required";
+
+    /**
+     * The drive was ended: each department's faculty coordinators get their own
+     * department's students and how far each got. Per-recipient rows, one
+     * batched dispatch.
+     */
+    public static final String DRIVE_DEPARTMENT_REPORT = "drive-department-report";
 }

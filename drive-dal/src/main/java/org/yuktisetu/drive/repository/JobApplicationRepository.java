@@ -298,6 +298,16 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     List<Long> findIdsByPostingAndStatus(@Param("postingId") Long postingId,
                                          @Param("status") ApplicationStatus status);
 
+    /** The students (not applications) at one status on one drive -- the audience of a drive-wide notice. */
+    @Query("""
+            select a.student.id from JobApplication a
+             where a.posting.id = :postingId
+               and a.status = :status
+               and a.isDeleted = false
+            """)
+    List<Long> findStudentIdsByPostingAndStatus(@Param("postingId") Long postingId,
+                                                @Param("status") ApplicationStatus status);
+
     @Query("""
             select count(a) from JobApplication a
              where a.posting.id = :postingId
@@ -347,4 +357,23 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
             """, nativeQuery = true)
     List<Long> findUnderReReview(@Param("studentUserId") Long studentUserId,
                                  @Param("postingIds") Collection<Long> postingIds);
+
+    /**
+     * Resolves a pasted or uploaded email list against one drive, in ONE query:
+     * [email (lower-cased), userId, applicationId or null, status or null] for
+     * every live account whose email is in the list. An email with no row here
+     * has no account at all; a row with a null application never applied.
+     */
+    @Query(value = """
+            SELECT lower(u.email), u.id, a.id, a.status
+              FROM users u
+              LEFT JOIN job_applications a
+                     ON a.student_user_id = u.id
+                    AND a.posting_id = :postingId
+                    AND a.is_deleted = false
+             WHERE lower(u.email) IN (:emails)
+               AND u.is_deleted = false
+            """, nativeQuery = true)
+    List<Object[]> resolveEmails(@Param("postingId") Long postingId,
+                                 @Param("emails") Collection<String> emails);
 }
