@@ -137,6 +137,21 @@ public class PlacementOffer extends BaseAuditableEntity {
     @Column(name = "revoke_reason", length = 512)
     private String revokeReason;
 
+    /** The IT admin who recorded the company withdrawing this offer. */
+    @Column(name = "revoked_by")
+    private Long revokedBy;
+
+    /** Why the student declined. Required when they decline (2026-11-01). */
+    @Column(name = "decline_reason", length = 512)
+    private String declineReason;
+
+    /** When a withdrawal the student asked for was approved, and their reason. */
+    @Column(name = "withdrawn_at")
+    private Instant withdrawnAt;
+
+    @Column(name = "withdrawal_reason", length = 512)
+    private String withdrawalReason;
+
     /** Whether this offer counts in the college's placement percentage. */
     @Column(name = "counts_toward_placement", nullable = false)
     private boolean countsTowardPlacement = true;

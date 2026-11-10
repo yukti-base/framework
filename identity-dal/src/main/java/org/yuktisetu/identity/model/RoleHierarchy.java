@@ -59,6 +59,30 @@ public final class RoleHierarchy {
         CHILDREN.put(STUDENT, EnumSet.noneOf(RoleType.class));
     }
 
+    // Who can FIND and VIEW which target role (people search, profile view).
+    // Decided 2026-11-07: "everything below" -- the transitive closure of
+    // CHILDREN, so a College Admin sees coordinators, HODs, GVs, FDCs and
+    // students, not just the next rung. IT_ADMIN and TNP_SUPER_ADMIN see
+    // every role, each other included. Deliberately NOT CAN_CREATE: under that
+    // table a Super Admin could not see a single student. Scope (college /
+    // dept) is applied by the caller, exactly as for create.
+    private static final Map<RoleType, Set<RoleType>> CAN_VIEW = new EnumMap<>(RoleType.class);
+    static {
+        for (RoleType role : RoleType.values()) {
+            EnumSet<RoleType> below = EnumSet.noneOf(RoleType.class);
+            java.util.ArrayDeque<RoleType> pending = new java.util.ArrayDeque<>(CHILDREN.getOrDefault(role, Set.of()));
+            while (!pending.isEmpty()) {
+                RoleType next = pending.pop();
+                if (below.add(next)) {
+                    pending.addAll(CHILDREN.getOrDefault(next, Set.of()));
+                }
+            }
+            CAN_VIEW.put(role, below);
+        }
+        CAN_VIEW.put(IT_ADMIN, EnumSet.allOf(RoleType.class));
+        CAN_VIEW.put(TNP_SUPER_ADMIN, EnumSet.allOf(RoleType.class));
+    }
+
     // Total order over roles, highest authority first. Exists so that a person
     // holding more than one role has their acting role decided by an explicit,
     // deterministic rule rather than by whatever order the JWT claim list
@@ -94,6 +118,17 @@ public final class RoleHierarchy {
     // call-site vocabulary.
     public static boolean canManage(RoleType actor, RoleType target) {
         return canCreate(actor, target);
+    }
+
+    /** Whether a holder of {@code actor} may find and view a holder of {@code target}, before scope. */
+    public static boolean canView(RoleType actor, RoleType target) {
+        return CAN_VIEW.getOrDefault(actor, Set.of()).contains(target);
+    }
+
+    /** Every role {@code actor} may find and view, before scope. A fresh copy; callers may mutate it. */
+    public static EnumSet<RoleType> viewableBy(RoleType actor) {
+        Set<RoleType> roles = CAN_VIEW.getOrDefault(actor, Set.of());
+        return roles.isEmpty() ? EnumSet.noneOf(RoleType.class) : EnumSet.copyOf(roles);
     }
 
     public static boolean canDeactivate(RoleType actor, RoleType target) {

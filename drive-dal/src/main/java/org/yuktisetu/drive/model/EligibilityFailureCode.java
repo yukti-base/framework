@@ -41,6 +41,8 @@ public final class EligibilityFailureCode {
     public static final String MAX_LIVE_OFFERS_REACHED = "MAX_LIVE_OFFERS_REACHED";
     public static final String COOLING_OFF_ACTIVE = "COOLING_OFF_ACTIVE";
     public static final String ADMIN_DENIED = "ADMIN_DENIED";
+    /** This drive does not admit students whose most recent offer they declined or withdrew. */
+    public static final String LAST_OFFER_DECLINED = "LAST_OFFER_DECLINED";
     public static final String ADMIN_DECISION_PENDING = "ADMIN_DECISION_PENDING";
     public static final String DEBARRED = "DEBARRED";
 

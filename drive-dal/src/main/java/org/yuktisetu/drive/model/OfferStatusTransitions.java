@@ -22,11 +22,15 @@ public final class OfferStatusTransitions {
     private static final Map<OfferStatus, Set<OfferStatus>> ALLOWED = new EnumMap<>(OfferStatus.class);
     static {
         ALLOWED.put(OFFERED, EnumSet.of(ACCEPTED, DECLINED, REVOKED, LAPSED));
-        ALLOWED.put(ACCEPTED, EnumSet.of(JOINED, DECLINED, REVOKED));
+        // ACCEPTED -> WITHDRAWN is the student giving the offer up after accepting,
+        // once the TnP approves; ACCEPTED -> REVOKED is the company withdrawing it,
+        // recorded by an IT admin. A student who has not accepted declines instead.
+        ALLOWED.put(ACCEPTED, EnumSet.of(JOINED, DECLINED, REVOKED, WITHDRAWN));
         ALLOWED.put(JOINED, EnumSet.noneOf(OfferStatus.class));
         ALLOWED.put(DECLINED, EnumSet.noneOf(OfferStatus.class));
         ALLOWED.put(REVOKED, EnumSet.noneOf(OfferStatus.class));
         ALLOWED.put(LAPSED, EnumSet.noneOf(OfferStatus.class));
+        ALLOWED.put(WITHDRAWN, EnumSet.noneOf(OfferStatus.class));
     }
 
     private static final Set<OfferStatus> LIVE = EnumSet.of(OFFERED, ACCEPTED, JOINED);

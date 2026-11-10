@@ -85,6 +85,15 @@ public final class NotificationTemplates {
     /** A drive the student applied to was cancelled by the TnP, with the reason given. */
     public static final String DRIVE_CANCELLED = "drive-cancelled";
 
+    /** Staff, in-app: a student asked to withdraw from an accepted offer and it awaits a decision. */
+    public static final String OFFER_WITHDRAWAL_REQUESTED = "offer-withdrawal-requested";
+
+    /** The student: the TnP approved or turned down their withdrawal request. */
+    public static final String OFFER_WITHDRAWAL_DECIDED = "offer-withdrawal-decided";
+
+    /** The student: the company withdrew their offer (recorded by an IT admin). */
+    public static final String OFFER_WITHDRAWN_BY_COMPANY = "offer-withdrawn-by-company";
+
     // --- Staff-facing -----------------------------------------------------
     //
     // Deliberately few. A notification per application would make a 400-student

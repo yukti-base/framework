@@ -66,6 +66,20 @@ public final class ReapplicationRules {
                                      PostingReapplicationPolicy policy,
                                      List<PlacementOffer> liveOffers,
                                      DrivePlacedStudentDecision decision) {
+        return check(posting, policy, liveOffers, decision, false);
+    }
+
+    /**
+     * @param lastOfferDeclined the student's most recent offer is one they declined
+     *                          or withdrew from. Only matters when the drive turns
+     *                          allowIfLastOfferDeclined off; the caller batch-loads
+     *                          it (PlacementOfferRepository.findStudentsWhoseLastOfferWasDeclined).
+     */
+    public static List<String> check(JobPosting posting,
+                                     PostingReapplicationPolicy policy,
+                                     List<PlacementOffer> liveOffers,
+                                     DrivePlacedStudentDecision decision,
+                                     boolean lastOfferDeclined) {
 
         // An explicit TnP ruling short-circuits everything, in both directions.
         if (decision != null) {
@@ -74,14 +88,18 @@ public final class ReapplicationRules {
                     : List.of();
         }
 
-        if (liveOffers == null || liveOffers.isEmpty()) {
-            // Nothing held, so no re-application constraint can apply. A student
-            // whose only offer was declined or revoked lands here, which gives the
-            // allowIfLastOfferDeclined behaviour without a second branch.
-            return List.of();
+        List<String> failures = new ArrayList<>(4);
+
+        // Students answer offers since 2026-11-01, so a declined offer is real. A
+        // drive can refuse a student who walked away from their last offer.
+        if (lastOfferDeclined && !policy.isAllowIfLastOfferDeclined()) {
+            failures.add(EligibilityFailureCode.LAST_OFFER_DECLINED);
         }
 
-        List<String> failures = new ArrayList<>(4);
+        if (liveOffers == null || liveOffers.isEmpty()) {
+            // Nothing held, so no placed/interning constraint can apply.
+            return failures;
+        }
 
         if (policy.getMaxLiveOffers() != null && liveOffers.size() >= policy.getMaxLiveOffers()) {
             failures.add(EligibilityFailureCode.MAX_LIVE_OFFERS_REACHED);
@@ -212,7 +230,9 @@ public final class ReapplicationRules {
             BigDecimal required = best.multiply(BigDecimal.ONE.add(
                     policy.getMinPackageUpliftPercent()
                             .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)));
-            return offered.compareTo(required) >= 0;
+            // Strictly greater (decided 2026-11-01): paying exactly the student's
+            // package plus the uplift is not an uplift.
+            return offered.compareTo(required) > 0;
         }
         return true;
     }
@@ -235,6 +255,7 @@ public final class ReapplicationRules {
         BigDecimal required = best.multiply(BigDecimal.ONE.add(
                 policy.getMinStipendUpliftPercent()
                         .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)));
-        return offered.compareTo(required) >= 0;
+        // Strictly greater, as for packages.
+        return offered.compareTo(required) > 0;
     }
 }

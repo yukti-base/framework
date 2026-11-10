@@ -1,6 +1,8 @@
 package org.yuktisetu.drive.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -40,4 +42,29 @@ public interface PlacementOfferRepository extends JpaRepository<PlacementOffer, 
 
     /** The offers a drive's rounds recorded for these applications, live or not. */
     List<PlacementOffer> findByApplication_IdInAndIsDeletedFalse(Collection<Long> applicationIds);
+
+    /**
+     * Of these students, the ones whose most recent offer (by offer date, then id)
+     * they declined or withdrew from. One query for a whole cohort; feeds
+     * ReapplicationRules' allowIfLastOfferDeclined.
+     */
+    @Query(value = """
+            SELECT student_user_id FROM (
+                SELECT DISTINCT ON (student_user_id) student_user_id, status
+                  FROM placement_offers
+                 WHERE student_user_id IN (:studentUserIds) AND is_deleted = false
+                 ORDER BY student_user_id, offer_date DESC, id DESC
+            ) latest
+            WHERE status IN ('DECLINED', 'WITHDRAWN')
+            """, nativeQuery = true)
+    List<Long> findStudentsWhoseLastOfferWasDeclined(@Param("studentUserIds") Collection<Long> studentUserIds);
+
+    /** The offer, row-locked: every answer, withdrawal and revoke goes through this. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from PlacementOffer o where o.id = :id and o.isDeleted = false")
+    Optional<PlacementOffer> lockById(@Param("id") Long id);
+
+    List<PlacementOffer> findByStudent_IdAndIsDeletedFalseOrderByOfferDateDesc(Long studentUserId);
+
+    List<PlacementOffer> findByPosting_IdAndIsDeletedFalse(Long postingId);
 }

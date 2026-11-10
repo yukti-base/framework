@@ -41,4 +41,26 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
     @Modifying
     @Query("delete from OutboxEvent e where e.status = :status and e.publishedAt < :before")
     int purgePublishedBefore(@Param("status") OutboxStatus status, @Param("before") Instant before);
+
+    /**
+     * Startup recovery: put back in the queue every row a previous run gave up on
+     * for a reason that can clear by itself (Kafka down, a timeout), and any row
+     * left mid-publish. Rows marked NON_RETRYABLE stay FAILED -- retrying a
+     * message Kafka rejected as malformed would only fail again.
+     */
+    @Modifying
+    @Query(value = """
+            UPDATE outbox_events
+               SET status = 'PENDING', available_at = now(), updated_at = now()
+             WHERE status = 'PUBLISHING'
+                OR (status = 'FAILED' AND coalesce(last_error, '') NOT LIKE 'NON_RETRYABLE%')
+            """, nativeQuery = true)
+    int requeueRecoverable();
+
+    /** [count, oldest created_at] of rows waiting longer than the given number of seconds. */
+    @Query(value = """
+            SELECT count(*), min(created_at) FROM outbox_events
+             WHERE status = 'PENDING' AND created_at < now() - make_interval(secs => :seconds)
+            """, nativeQuery = true)
+    List<Object[]> backlogOlderThan(@Param("seconds") int seconds);
 }

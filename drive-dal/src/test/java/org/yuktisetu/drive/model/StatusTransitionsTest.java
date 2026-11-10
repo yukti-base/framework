@@ -62,8 +62,7 @@ class StatusTransitionsTest {
         @DisplayName("terminal states have no outgoing transitions at all")
         void terminalStatesAreTerminal() {
             for (ApplicationStatus terminal : new ApplicationStatus[]{
-                    ApplicationStatus.DISQUALIFIED,
-                    ApplicationStatus.OFFER_ACCEPTED, ApplicationStatus.OFFER_DECLINED}) {
+                    ApplicationStatus.DISQUALIFIED, ApplicationStatus.OFFER_DECLINED}) {
                 for (ApplicationStatus to : ApplicationStatus.values()) {
                     assertFalse(ApplicationStatusTransitions.canTransition(terminal, to),
                             terminal + " must be terminal but allows -> " + to);
@@ -116,11 +115,21 @@ class StatusTransitionsTest {
         }
 
         @Test
-        @DisplayName("everything but the student's answer to an offer is reachable now")
-        void reachableNowIsTheBuiltSubset() {
+        @DisplayName("an accepted offer ends only by the student's approved withdrawal or the company's")
+        void acceptedOutgoing() {
+            for (ApplicationStatus to : ApplicationStatus.values()) {
+                boolean expected = to == ApplicationStatus.OFFER_DECLINED || to == ApplicationStatus.REJECTED;
+                assertEquals(expected,
+                        ApplicationStatusTransitions.canTransition(ApplicationStatus.OFFER_ACCEPTED, to),
+                        "OFFER_ACCEPTED -> " + to);
+            }
+        }
+
+        @Test
+        @DisplayName("every status is reachable now that students answer their offers")
+        void reachableNowIsEverything() {
             for (ApplicationStatus s : ApplicationStatus.values()) {
-                boolean expected = s != ApplicationStatus.OFFER_ACCEPTED && s != ApplicationStatus.OFFER_DECLINED;
-                assertEquals(expected, ApplicationStatusTransitions.isReachableNow(s), s.name());
+                assertTrue(ApplicationStatusTransitions.isReachableNow(s), s.name());
             }
         }
     }

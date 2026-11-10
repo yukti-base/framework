@@ -255,6 +255,82 @@ class ReapplicationRulesTest {
         void revokedOfferDoesNotConstrain() {
             assertFalse(ReapplicationRules.liveStatuses().contains(OfferStatus.REVOKED));
         }
+
+        @Test
+        @DisplayName("an offer the student withdrew from is not live")
+        void withdrawnOfferDoesNotConstrain() {
+            assertFalse(ReapplicationRules.liveStatuses().contains(OfferStatus.WITHDRAWN));
+        }
+    }
+
+    @Nested
+    @DisplayName("package uplift (placed at 6 LPA, uplift 20%: the drive must pay MORE than 7.2 LPA)")
+    class Uplift {
+
+        private PostingReapplicationPolicy upliftPolicy() {
+            PostingReapplicationPolicy p = policy(
+                    ReapplicationStance.ALLOWED_WITH_UPLIFT, ReapplicationStance.ALLOWED, ReapplicationStance.ALLOWED);
+            p.setMinPackageUpliftPercent(new BigDecimal("20"));
+            return p;
+        }
+
+        private List<String> check(String driveCtc, PlacementOffer... held) {
+            return ReapplicationRules.check(posting(JobType.FULL_TIME, new BigDecimal(driveCtc)),
+                    upliftPolicy(), List.of(held), null);
+        }
+
+        @Test
+        @DisplayName("a drive paying above the uplift admits the placed student")
+        void aboveUpliftAdmits() {
+            assertTrue(check("750000", offer(OfferType.FULL_TIME, OfferStatus.ACCEPTED, new BigDecimal("600000"))).isEmpty());
+        }
+
+        @Test
+        @DisplayName("exactly the uplift is not enough -- it must be greater")
+        void exactlyTheUpliftIsRefused() {
+            assertTrue(check("720000", offer(OfferType.FULL_TIME, OfferStatus.ACCEPTED, new BigDecimal("600000")))
+                    .contains(EligibilityFailureCode.PLACED_UPLIFT_NOT_MET));
+        }
+
+        @Test
+        @DisplayName("below the uplift is refused")
+        void belowUpliftIsRefused() {
+            assertTrue(check("700000", offer(OfferType.FULL_TIME, OfferStatus.ACCEPTED, new BigDecimal("600000")))
+                    .contains(EligibilityFailureCode.PLACED_UPLIFT_NOT_MET));
+        }
+
+        @Test
+        @DisplayName("the uplift is over the student's BEST offer, not their latest")
+        void measuredAgainstTheBestOffer() {
+            List<String> failures = check("1000000",
+                    offer(OfferType.FULL_TIME, OfferStatus.ACCEPTED, new BigDecimal("600000")),
+                    offer(OfferType.FULL_TIME, OfferStatus.OFFERED, new BigDecimal("900000")));
+            assertTrue(failures.contains(EligibilityFailureCode.PLACED_UPLIFT_NOT_MET),
+                    "10 LPA is not above 9 LPA + 20% = 10.8 LPA");
+        }
+    }
+
+    @Nested
+    @DisplayName("allowIfLastOfferDeclined")
+    class LastOfferDeclined {
+
+        @Test
+        @DisplayName("a drive that turns it off refuses a student whose last offer they declined")
+        void offRefusesDecliner() {
+            PostingReapplicationPolicy p = policy(
+                    ReapplicationStance.ALLOWED, ReapplicationStance.ALLOWED, ReapplicationStance.ALLOWED);
+            p.setAllowIfLastOfferDeclined(false);
+            assertEquals(List.of(EligibilityFailureCode.LAST_OFFER_DECLINED),
+                    ReapplicationRules.check(posting(JobType.FULL_TIME, null), p, List.of(), null, true));
+        }
+
+        @Test
+        @DisplayName("left on (the default), a decliner is free")
+        void onAdmitsDecliner() {
+            PostingReapplicationPolicy p = policy(
+                    ReapplicationStance.ALLOWED, ReapplicationStance.ALLOWED, ReapplicationStance.ALLOWED);
+            assertTrue(ReapplicationRules.check(posting(JobType.FULL_TIME, null), p, List.of(), null, true).isEmpty());
+        }
     }
 
     // ------------------------------------------------------- pending offers

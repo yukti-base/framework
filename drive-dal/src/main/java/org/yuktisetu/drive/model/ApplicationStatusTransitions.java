@@ -10,11 +10,10 @@ import static org.yuktisetu.drive.model.ApplicationStatus.*;
 /**
  * Legal application lifecycle moves.
  *
- * OFFER_ACCEPTED and OFFER_DECLINED are not reachable yet: the student's answer
- * to an offer is not recorded in the app. Everything else is -- SHORTLISTED and
- * REJECTED by the shortlist and the drive's rounds, OFFERED by clearing the
- * final round. REACHABLE_NOW lets a service reject the rest explicitly rather
- * than by accident.
+ * Every status is reachable: SHORTLISTED and REJECTED by the shortlist and the
+ * drive's rounds, OFFERED by clearing the final round, OFFER_ACCEPTED and
+ * OFFER_DECLINED by the student's answer (since 2026-11-01). REACHABLE_NOW is
+ * kept so a status added later is rejected explicitly until something sets it.
  *
  * WITHDRAWN -> APPLIED is intentional: re-applying before the deadline revives
  * the SAME row, which is what keeps uk_application_posting_student absolute.
@@ -52,7 +51,9 @@ public final class ApplicationStatusTransitions {
         // round, put back in the drive (or offered, if it was the final round).
         ALLOWED.put(REJECTED, EnumSet.of(APPLIED, SHORTLISTED, OFFERED));
         ALLOWED.put(DISQUALIFIED, EnumSet.noneOf(ApplicationStatus.class));
-        ALLOWED.put(OFFER_ACCEPTED, EnumSet.noneOf(ApplicationStatus.class));
+        // -> OFFER_DECLINED: the student withdrew an accepted offer and the TnP
+        // approved. -> REJECTED: the company withdrew it, recorded by an IT admin.
+        ALLOWED.put(OFFER_ACCEPTED, EnumSet.of(OFFER_DECLINED, REJECTED));
         ALLOWED.put(OFFER_DECLINED, EnumSet.noneOf(ApplicationStatus.class));
         ALLOWED.put(DRIVE_CANCELLED, EnumSet.noneOf(ApplicationStatus.class));
     }
@@ -67,7 +68,7 @@ public final class ApplicationStatusTransitions {
     /** What this phase of the system may actually set. */
     private static final Set<ApplicationStatus> REACHABLE_NOW =
             EnumSet.of(APPLIED, WITHDRAWN, DISQUALIFIED, IN_REVIEW, DRIVE_CANCELLED,
-                    SHORTLISTED, REJECTED, OFFERED);
+                    SHORTLISTED, REJECTED, OFFERED, OFFER_ACCEPTED, OFFER_DECLINED);
 
     public static boolean canTransition(ApplicationStatus from, ApplicationStatus to) {
         return ALLOWED.getOrDefault(from, Set.of()).contains(to);

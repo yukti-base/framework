@@ -664,6 +664,85 @@ public final class Dispatches {
     }
 
     /**
+     * To the drive's TnP staff, in-app only (staff volume policy): a student asked
+     * to give up an accepted offer, which waits for their decision.
+     */
+    public static NotificationDispatchEvent offerWithdrawalRequested(
+            String companyName,
+            String postingTitle,
+            String studentName,
+            String reason,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                "WARNING",
+                NotificationTemplates.OFFER_WITHDRAWAL_REQUESTED,
+                "Withdrawal request: " + studentName + ", " + postingTitle,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "studentName", nullSafe(studentName),
+                        "reason", nullSafe(reason),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                IN_APP_ONLY);
+    }
+
+    /** To the student: the TnP's decision on their withdrawal request. */
+    public static NotificationDispatchEvent offerWithdrawalDecided(
+            String companyName,
+            String postingTitle,
+            boolean approved,
+            String note,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                approved ? "INFO" : "WARNING",
+                NotificationTemplates.OFFER_WITHDRAWAL_DECIDED,
+                (approved ? "Withdrawal approved: " : "Withdrawal not approved: ") + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "decision", approved ? "approved" : "not approved",
+                        "outcome", approved
+                                ? "Your offer is withdrawn. You are no longer counted as placed through this offer."
+                                : "Your offer stands, and you remain placed through it.",
+                        "note", nullSafe(note),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
+
+    /** To the student: the company withdrew the offer, recorded by an IT admin with the reason. */
+    public static NotificationDispatchEvent offerWithdrawnByCompany(
+            String companyName,
+            String postingTitle,
+            String reason,
+            String actionUrl,
+            List<NotificationDispatchEvent.Recipient> recipients) {
+
+        return new NotificationDispatchEvent(
+                "GENERIC",
+                "CRITICAL",
+                NotificationTemplates.OFFER_WITHDRAWN_BY_COMPANY,
+                "Offer withdrawn: " + postingTitle + " at " + companyName,
+                actionUrl,
+                Map.of("companyName", nullSafe(companyName),
+                        "postingTitle", nullSafe(postingTitle),
+                        "reason", nullSafe(reason),
+                        "actionUrl", nullSafe(actionUrl)),
+                recipients,
+                List.of(),
+                EMAIL_AND_IN_APP);
+    }
+
+    /**
      * A department's results for an ended drive, to that department's faculty
      * coordinators. Each recipient's variables carry THEIR department's rows
      * ("rows": a list of maps with prn, name, email, reached, outcome), so one

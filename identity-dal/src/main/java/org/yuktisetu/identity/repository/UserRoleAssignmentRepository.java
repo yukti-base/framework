@@ -185,4 +185,21 @@ public interface UserRoleAssignmentRepository extends JpaRepository<UserRoleAssi
                                          @Param("collegeIds") Collection<Long> collegeIds);
 
     long countByRevokedBy_Id(Long userId);
+
+    /**
+     * Every assignment, active or revoked, of a page of people, with college (and
+     * its trust), department and degree fetched in the same query -- people search
+     * hydrates a whole result page with this one call rather than one per row.
+     * No isActive filter on purpose: the detail view shows revoked roles too.
+     */
+    @Query("""
+            select a from UserRoleAssignment a
+              left join fetch a.college c
+              left join fetch c.trust
+              left join fetch a.department
+              left join fetch a.degree
+             where a.user.id in :userIds
+             order by a.user.id, a.isActive desc, a.id
+            """)
+    List<UserRoleAssignment> findAllForUsers(@Param("userIds") Collection<Long> userIds);
 }

@@ -1,6 +1,7 @@
 package org.yuktisetu.identity.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -10,7 +11,9 @@ import org.yuktisetu.identity.model.NotifyTarget;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+// JpaSpecificationExecutor backs admin-service's people search, the one place
+// that composes filters at runtime. Every other lookup stays a named query.
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     // Excludes soft-deleted rows by default — login/lookup paths must never
     // resolve a deleted account. Callers needing deleted rows (admin restore
     // screens) go through a separate explicit query, not this one.

@@ -7,5 +7,7 @@ public enum OfferStatus {
     DECLINED,
     REVOKED,
     JOINED,
-    LAPSED
+    LAPSED,
+    /** The student gave up an accepted offer, with the TnP's approval (2026-11-01). Not live. */
+    WITHDRAWN
 }

@@ -19,4 +19,13 @@ dependencies {
     // the next step of the migration -- this module would stop compiling with a
     // "cannot find symbol: BaseAuditableEntity" that points at the wrong cause.
     api project(':persistence-common')
+
+    // Test-only: RoleHierarchy's tables are pure rules and get a regression net.
+    testImplementation platform("org.junit:junit-bom:5.11.3")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
